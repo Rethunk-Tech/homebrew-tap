@@ -1,5 +1,5 @@
 class Mortar < Formula
-  desc "Desktop mod manager for PC games: profiles, mod loaders and Nexus Mods downloads"
+  desc "Desktop mod manager for PC games: profiles and Nexus, GitHub, Thunderstore mods"
   homepage "https://mortar.rethunk.tech/"
   license "AGPL-3.0-only"
 
