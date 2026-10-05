@@ -1,6 +1,6 @@
 # Mortar Homebrew tap
 
-[Homebrew](https://brew.sh) on Linux formula for [Mortar](https://mortar.rethunk.tech/), the Stardew Valley mod manager.
+[Homebrew](https://brew.sh) on Linux formula for [Mortar](https://mortar.rethunk.tech/), the desktop mod manager for PC games.
 
 ```sh
 brew install rethunk-tech/tap/mortar
