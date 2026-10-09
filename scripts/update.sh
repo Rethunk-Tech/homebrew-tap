@@ -3,7 +3,7 @@
 # checked against the Mortar packages key; a release without SHA256SUMS is hashed by downloading its files.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-FPR=3283604606CAE2295D476F9883BC8751EE6F773D
+FPR=D8B1C4C205C5FB3633CB8B9900B75959B637DCB5
 F=Formula/mortar.rb
 tag=$(gh release view --repo Rethunk-Tech/mortar --json tagName --jq .tagName)
 current=$(grep -o 'download/v[^/]*' "$F" | head -1)
