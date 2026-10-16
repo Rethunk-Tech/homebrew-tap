@@ -7,11 +7,11 @@ class Mortar < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.2/mortar-linux-aarch64.AppImage"
-      sha256 "a4d5b5b600e940b1349984602b87046655305c281acf27ffee262c6d7f2af5c7"
+      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.3/mortar-linux-aarch64.AppImage"
+      sha256 "812c2c395ad9512bf455a769d5c306b3c226e683c2d27605284fa66527533569"
     else
-      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.2/mortar-linux-x86_64.AppImage"
-      sha256 "50ae2dfdecfa113417d6e8a8ea579dd09f6d0575b09c77480c06cce1fdefbc1e"
+      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.3/mortar-linux-x86_64.AppImage"
+      sha256 "68f36e8c93b033f6b657e439751d89ea92bab2ce9d1eb0a18b05fbfea01af21c"
     end
   end
 
