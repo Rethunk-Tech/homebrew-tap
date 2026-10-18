@@ -35,5 +35,5 @@ jobs:
           tar -xJf "$RUNNER_TEMP/shellcheck.tar.xz" -C "$RUNNER_TEMP"
           sudo install -m 755 "$RUNNER_TEMP/shellcheck-v0.11.0/shellcheck" /usr/local/bin/shellcheck
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-          go install github.com/Rethunk-Tech/rethunk-gate-cli/cmd/gate@v0.6.1
+          go install github.com/Rethunk-Tech/rethunk-gate-cli/cmd/gate@v0.6.7
       - run: gate
