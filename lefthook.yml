@@ -1,0 +1,6 @@
+pre-push:
+  jobs:
+    # Everything the project has, detected rather than listed here, so this
+    # file cannot drift from what `gate --list` shows.
+    - name: gate
+      run: gate
