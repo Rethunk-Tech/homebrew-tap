@@ -18,8 +18,11 @@ jobs:
         run: scripts/update.sh
       - name: Commit
         run: |
-          git diff --quiet && exit 0
+          git diff --quiet -- Formula/mortar.rb && exit 0
+          scripts/test-rewrite.sh
+          git add Formula/mortar.rb
+          git diff --cached --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "mortar: $(grep -o 'download/v[^/]*' Formula/mortar.rb | head -1 | cut -d/ -f2)"
+          git commit -m "mortar: $(grep -m1 -o 'download/v[^/]*' Formula/mortar.rb | cut -d/ -f2)"
           git push
