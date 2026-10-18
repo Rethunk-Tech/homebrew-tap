@@ -289,35 +289,76 @@ cp "$formula_orig" Formula/mortar.rb
 got=$(awk -f scripts/parse-tools.awk scripts/tools.tsv)
 [ "$(printf '%s\n' "$got" | wc -l)" -eq 6 ]
 [ "$(printf '%s\n' "$got" | awk -F'|' '$3=="gpg" {print $1}')" = mortar ]
-[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="https" {print $1}' | tr '\n' ' ')" = "rgit gate heft engined claude-format-hooks " ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="sha256sums" {print $1}' | tr '\n' ' ')" = "rgit gate heft engined " ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="sha256" {print $1}')" = claude-format-hooks ]
 [ "$(printf '%s\n' "$got" | awk -F'|' '$6!="" {print $1}' | tr '\n' ' ')" = "rgit gate claude-format-hooks " ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$10!="" {print $1}' | tr '\n' ' ')" = "gate claude-format-hooks " ]
 
 if echo 'too|few' | awk -f scripts/parse-tools.awk >"$tmp/nf.out" 2>"$tmp/nf.err"; then
   echo "parse-tools.awk accepted a short row" >&2
   exit 1
 fi
-grep -q 'expected 9 fields' "$tmp/nf.err"
+grep -q 'expected 13 fields' "$tmp/nf.err"
 
-if echo 'x|Rethunk-Tech/x|https||linux-arm64||https://example|MIT|d' | awk -f scripts/parse-tools.awk >"$tmp/nolinux.out" 2>"$tmp/nolinux.err"; then
+if echo 'x|Rethunk-Tech/x|sha256sums||linux-arm64||https://example|MIT|d|||bare|x' | awk -f scripts/parse-tools.awk >"$tmp/nolinux.out" 2>"$tmp/nolinux.err"; then
   echo "parse-tools.awk accepted an empty linux_amd64" >&2
   exit 1
 fi
 grep -q 'linux_amd64' "$tmp/nolinux.err"
 
-if echo 'x|Rethunk-Tech/x|pgp|a.tar.gz|b.tar.gz||https://example|MIT|d' | awk -f scripts/parse-tools.awk >"$tmp/signed.out" 2>"$tmp/signed.err"; then
-  echo "parse-tools.awk accepted signed=pgp" >&2
+if echo 'x|Rethunk-Tech/x|pgp|a|b||https://example|MIT|d|||bare|x' | awk -f scripts/parse-tools.awk >"$tmp/signed.out" 2>"$tmp/signed.err"; then
+  echo "parse-tools.awk accepted checksum=pgp" >&2
   exit 1
 fi
-grep -q 'signed must be gpg or https' "$tmp/signed.err"
+grep -q 'checksum must be gpg, sha256sums, or sha256' "$tmp/signed.err"
 
+if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||tarball|x' | awk -f scripts/parse-tools.awk >"$tmp/inst.out" 2>"$tmp/inst.err"; then
+  echo "parse-tools.awk accepted install=tarball" >&2
+  exit 1
+fi
+grep -q 'install must be bare or archive' "$tmp/inst.err"
+
+if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||bare|' | awk -f scripts/parse-tools.awk >"$tmp/cmd.out" 2>"$tmp/cmd.err"; then
+  echo "parse-tools.awk accepted an empty cmd" >&2
+  exit 1
+fi
+grep -q 'cmd is required' "$tmp/cmd.err"
+
+h64() { printf '%s' "$1" | awk '{while (length($0)<64) $0=$0 $0} {print substr($0,1,64)}'; }
 rgit_sums=$tmp/rgit.SHA256SUMS
-cat >"$rgit_sums" <<'EOF'
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  rgit-linux-amd64.tar.gz
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb  rgit-linux-arm64.tar.gz
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  rgit-windows-amd64.zip
+cat >"$rgit_sums" <<EOF
+$(h64 a)  rgit-v1.2.3-linux-amd64
+$(h64 b)  rgit-v1.2.3-linux-arm64
+$(h64 c)  rgit-v1.2.3-windows-amd64.exe
 EOF
+gate_sums=$tmp/gate.SHA256SUMS
+cat >"$gate_sums" <<EOF
+$(h64 d)  gate-linux-amd64
+$(h64 e)  gate-linux-arm64
+$(h64 f)  gate-darwin-amd64
+$(h64 aa)  gate-darwin-arm64
+$(h64 ab)  gate-windows-amd64.exe
+EOF
+heft_sums=$tmp/heft.SHA256SUMS
+cat >"$heft_sums" <<EOF
+$(h64 ac)  heft-linux-amd64
+$(h64 ad)  heft-linux-arm64
+EOF
+engined_sums=$tmp/engined.SHA256SUMS
+cat >"$engined_sums" <<EOF
+$(h64 ae)  engined-linux-amd64.tar.gz
+$(h64 af)  engined-linux-arm64.tar.gz
+EOF
+mkdir -p "$tmp/sha256"
+# hash-only and GNU two-space .sha256 both appear as checksum files
+printf '%s\n' "$(h64 a1)" >"$tmp/sha256/format-dispatch-linux-amd64.sha256"
+printf '%s  %s\n' "$(h64 a2)" format-dispatch-linux-arm64 >"$tmp/sha256/format-dispatch-linux-arm64.sha256"
+printf '%s  %s\n' "$(h64 a3)" format-dispatch-darwin-amd64 >"$tmp/sha256/format-dispatch-darwin-amd64.sha256"
+printf '%s  %s\n' "$(h64 a4)" format-dispatch-darwin-arm64 >"$tmp/sha256/format-dispatch-darwin-arm64.sha256"
+printf '%s  %s\n' "$(h64 a5)" format-dispatch-windows-amd64.exe >"$tmp/sha256/format-dispatch-windows-amd64.exe.sha256"
+
 stub_multi_url() {
-  sums_rgit=${1:-}
+  mode=$1
   cat >"$bin/curl" <<EOF
 #!/bin/sh
 dest=
@@ -345,52 +386,108 @@ if [ "\$head" = 1 ]; then
     *rethunk-git-cli/releases/latest)
       echo "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/tag/v1.2.3"
       ;;
+    *rethunk-gate-cli/releases/latest)
+      echo "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/tag/v1.2.3"
+      ;;
+    */heft/releases/latest)
+      echo "https://github.com/Rethunk-Tech/heft/releases/tag/v1.2.3"
+      ;;
+    */engined/releases/latest)
+      echo "https://github.com/Rethunk-Tech/engined/releases/tag/v1.2.3"
+      ;;
+    *claude-format-hooks/releases/latest)
+      echo "https://github.com/Rethunk-Tech/claude-format-hooks/releases/tag/v1.2.3"
+      ;;
     *)
       echo "https://github.com/Rethunk-Tech/skip/releases/tag/latest"
       ;;
   esac
   exit 0
 fi
+if [ "$mode" = skip ]; then
+  exit 22
+fi
 case \$url in
-  *rethunk-git-cli/*/SHA256SUMS)
-    if [ -n "$sums_rgit" ]; then
-      cp "$sums_rgit" "\$dest"
-    else
-      exit 22
-    fi
-    ;;
+  *rethunk-git-cli/*/SHA256SUMS) cp "$rgit_sums" "\$dest" ;;
+  *rethunk-gate-cli/*/SHA256SUMS) cp "$gate_sums" "\$dest" ;;
+  */heft/*/SHA256SUMS) cp "$heft_sums" "\$dest" ;;
+  */engined/*/SHA256SUMS) cp "$engined_sums" "\$dest" ;;
+  *claude-format-hooks/*/SHA256SUMS) exit 22 ;;
+  *claude-format-hooks/*/format-dispatch-linux-amd64.sha256) cp "$tmp/sha256/format-dispatch-linux-amd64.sha256" "\$dest" ;;
+  *claude-format-hooks/*/format-dispatch-linux-arm64.sha256) cp "$tmp/sha256/format-dispatch-linux-arm64.sha256" "\$dest" ;;
+  *claude-format-hooks/*/format-dispatch-darwin-amd64.sha256) cp "$tmp/sha256/format-dispatch-darwin-amd64.sha256" "\$dest" ;;
+  *claude-format-hooks/*/format-dispatch-darwin-arm64.sha256) cp "$tmp/sha256/format-dispatch-darwin-arm64.sha256" "\$dest" ;;
+  *claude-format-hooks/*/format-dispatch-windows-amd64.exe.sha256) cp "$tmp/sha256/format-dispatch-windows-amd64.exe.sha256" "\$dest" ;;
   *) exit 22 ;;
 esac
 EOF
   chmod +x "$bin/curl"
 }
 
-stub_multi_url "$rgit_sums"
+stub_multi_url create
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/create.out" 2>"$tmp/create.err"; then
-  echo "update.sh failed to create rgit formula from a matching release" >&2
+  echo "update.sh failed to create formulas from matching releases" >&2
   cat "$tmp/create.err" >&2
   exit 1
 fi
 grep -q 'rgit v1.2.3' "$tmp/create.out"
-grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
-grep -q 'download/v1.2.3/rgit-linux-arm64.tar.gz' Formula/rgit.rb
-grep -q 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' Formula/rgit.rb
-grep -q 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-arm64' Formula/rgit.rb
+grep -q 'depends_on :linux' Formula/rgit.rb
+grep -q 'bin.install File.basename(stable.url) => "rgit"' Formula/rgit.rb
+grep -q "$(h64 a)" Formula/rgit.rb
+grep -q "$(h64 b)" Formula/rgit.rb
 grep -q 'class Rgit ' Formula/rgit.rb
 [ -f bucket/rgit.json ]
-grep -q 'rgit-windows-amd64.zip' bucket/rgit.json
-grep -q 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' bucket/rgit.json
+grep -q 'rgit-v1.2.3-windows-amd64.exe' bucket/rgit.json
+grep -q "$(h64 c)" bucket/rgit.json
 grep -q '"version": "1.2.3"' bucket/rgit.json
-[ ! -f Formula/heft.rb ]
-[ ! -f Formula/gate.rb ]
+grep -q '"rgit"' bucket/rgit.json
+
+grep -q 'gate v1.2.3' "$tmp/create.out"
+grep -q 'download/v1.2.3/gate-linux-amd64' Formula/gate.rb
+grep -q 'download/v1.2.3/gate-darwin-arm64' Formula/gate.rb
+grep -q 'on_macos' Formula/gate.rb
+if grep -q 'depends_on :linux' Formula/gate.rb; then
+  echo "gate formula is linux-only but ships darwin assets" >&2
+  exit 1
+fi
+grep -q "$(h64 f)" Formula/gate.rb
+grep -q "$(h64 aa)" Formula/gate.rb
+[ -f bucket/gate.json ]
+grep -q 'gate-windows-amd64.exe' bucket/gate.json
+
+grep -q 'heft v1.2.3' "$tmp/create.out"
+grep -q 'Apache-2.0' Formula/heft.rb
+grep -q 'depends_on :linux' Formula/heft.rb
+grep -q 'download/v1.2.3/heft-linux-amd64' Formula/heft.rb
+[ ! -f bucket/heft.json ]
+
+grep -q 'engined v1.2.3' "$tmp/create.out"
+grep -q 'depends_on "bun"' Formula/engined.rb
+grep -q 'depends_on :linux' Formula/engined.rb
+grep -q 'engined-linux-amd64.tar.gz' Formula/engined.rb
+grep -q 'dist/main.js' Formula/engined.rb
+grep -F -q "Formula['bun'].opt_bin" Formula/engined.rb
+
+grep -q 'claude-format-hooks v1.2.3' "$tmp/create.out"
+grep -q 'class ClaudeFormatHooks ' Formula/claude-format-hooks.rb
+grep -q 'bin.install File.basename(stable.url) => "format-dispatch"' Formula/claude-format-hooks.rb
+grep -q 'format-dispatch --version' Formula/claude-format-hooks.rb
+grep -q 'download/v1.2.3/format-dispatch-darwin-amd64' Formula/claude-format-hooks.rb
+grep -q "$(h64 a1)" Formula/claude-format-hooks.rb
+grep -q "$(h64 a2)" Formula/claude-format-hooks.rb
+[ -f bucket/claude-format-hooks.json ]
+grep -q 'format-dispatch-windows-amd64.exe' bucket/claude-format-hooks.json
+grep -q '"format-dispatch"' bucket/claude-format-hooks.json
 
 # Update: existing formula moves to the new tag (same fixture sums).
 PATH="$bin:$PATH" scripts/update.sh >"$tmp/current.out" 2>"$tmp/current.err" || {
-  echo "update.sh failed when rgit was already at v1.2.3" >&2
+  echo "update.sh failed when formulas were already at v1.2.3" >&2
   cat "$tmp/current.err" >&2
   exit 1
 }
-grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
 
 sed -i 's/v1.2.3/v0.1.0/g' Formula/rgit.rb
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/update.out" 2>"$tmp/update.err"; then
@@ -399,14 +496,14 @@ if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/update.out" 2>"$tmp/update.err";
   exit 1
 fi
 grep -q 'rgit v1.2.3' "$tmp/update.out"
-grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
-grep -q 'download/v1.2.3/rgit-linux-arm64.tar.gz' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-arm64' Formula/rgit.rb
 
-rm -f Formula/rgit.rb bucket/rgit.json
-: >"$tmp/rgit.empty"
-stub_multi_url "$tmp/rgit.empty"
+rm -f Formula/rgit.rb Formula/gate.rb Formula/heft.rb Formula/engined.rb Formula/claude-format-hooks.rb
+rm -rf bucket
+stub_multi_url skip
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/skip.out" 2>"$tmp/skip.err"; then
-  echo "update.sh failed a skip (no matching rgit assets)" >&2
+  echo "update.sh failed a skip (no matching assets)" >&2
   cat "$tmp/skip.err" >&2
   exit 1
 fi

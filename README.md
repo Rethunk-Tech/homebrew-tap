@@ -8,7 +8,7 @@
 
 ---
 
-Linux [Homebrew](https://brew.sh) formulas for Rethunk-Tech tools. macOS is not supported.
+[Homebrew](https://brew.sh) formulas for Rethunk-Tech tools. Every formula ships Linux assets; `gate` and `claude-format-hooks` also ship macOS assets.
 
 | Formula | Install | Project |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Install, upgrade, and maintainer bump steps: [HUMANS.md](HUMANS.md).
 
 - Mortar ships the release AppImage: `mortar-linux-aarch64.AppImage` on ARM Linux, `mortar-linux-x86_64.AppImage` on Intel Linux.
 - Mortar SHA-256 pins come from the release `SHA256SUMS` after `scripts/update.sh` checks the signature against the Mortar packages key (`D8B1 C4C2 05C5 FB36 33CB 8B99 00B7 5959 B637 DCB5`).
-- Other tools pin hashes from the release `SHA256SUMS` fetched over HTTPS from GitHub (unsigned; hashes in that file must match the named assets).
+- Other tools pin hashes from the release `SHA256SUMS` or per-asset `.sha256` files fetched over HTTPS from GitHub (unsigned; hashes in those files must match the named assets).
 - A scheduled GitHub Actions workflow (cron `17 */6 * * *`, plus `workflow_dispatch`) creates or updates each formula/manifest when the expected assets exist.
 - Mortar's AppImage needs FUSE 2. The formula depends on `libfuse@2`.
 
