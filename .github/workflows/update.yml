@@ -23,15 +23,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fuse libfuse2
           sudo chmod a+rw /dev/fuse
-      - name: Bump to the latest Mortar release
+      - name: Bump formulas and manifests to latest releases
         run: scripts/update.sh
       - name: Commit
         run: |
-          git diff --quiet -- Formula/mortar.rb && exit 0
+          extra=
+          [ -d bucket ] && extra=bucket
+          git diff --quiet -- Formula $extra && exit 0
           scripts/test-rewrite.sh
-          git add Formula/mortar.rb
+          git add Formula
+          [ -d bucket ] && git add bucket
           git diff --cached --quiet && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "mortar: $(grep -m1 -o 'download/v[^/]*' Formula/mortar.rb | cut -d/ -f2)"
+          if git diff --cached --name-only | grep -qx Formula/mortar.rb &&
+            [ "$(git diff --cached --name-only | wc -l)" -eq 1 ]; then
+            git commit -m "mortar: $(grep -m1 -o 'download/v[^/]*' Formula/mortar.rb | cut -d/ -f2)"
+          else
+            git commit -m "packaging: latest releases"
+          fi
           git push
