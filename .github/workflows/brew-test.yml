@@ -1,0 +1,33 @@
+name: brew test
+
+# Installs and tests the formulas through real Homebrew with FUSE, only when a
+# formula changes: setting up Homebrew costs minutes the default CI should not.
+on:
+  push:
+    branches: [main]
+    paths: ["Formula/**", ".github/workflows/brew-test.yml"]
+  pull_request:
+    paths: ["Formula/**", ".github/workflows/brew-test.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mortar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: Homebrew/actions/setup-homebrew@4790763c0a3ba4036f72634dc079c4a7dfcd4878 # main
+      - name: FUSE for the AppImage
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q fuse libfuse2t64
+          sudo modprobe fuse || true
+      - name: Install and test mortar
+        run: |
+          brew install --formula ./Formula/mortar.rb
+          brew test mortar

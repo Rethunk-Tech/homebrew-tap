@@ -42,5 +42,3 @@ jobs:
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           go install github.com/Rethunk-Tech/rethunk-gate-cli/cmd/gate@v0.6.7
       - run: gate
-      - name: brew test mortar
-        run: brew test mortar
