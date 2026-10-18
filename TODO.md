@@ -78,48 +78,6 @@ Rejected: `uses_from_macos`. This formula is linux-only.
   this section records that Homebrew has no such dep.
 - AppImage url, sha256, and rewrite script are unchanged.
 
-## scheduled update has no concurrency group
-
-`.github/workflows/ci.yml:14` cancels a superseded `gate` run keyed by
-ref. `.github/workflows/update.yml` has no `concurrency` block. Two
-scheduled ticks (or dispatch overlapping the cron) can both rewrite
-`Formula/mortar.rb` and push.
-
-Decided shape: copy ci.yml's group/cancel-in-progress, keyed by this
-workflow and ref:
-
-```yaml
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-```
-
-Rejected: a mutex job or skip-if-in-progress without cancel. The ci.yml
-pattern is already the house rule.
-
-### Read
-
-1. `.github/workflows/ci.yml:14` `concurrency` — the pattern to copy.
-2. `.github/workflows/update.yml:3` `on.schedule` / `workflow_dispatch`.
-3. `.github/workflows/update.yml:21` `git diff --quiet && exit 0` — the
-   no-op path if the cancelled sibling already pushed the same tag.
-
-### Traps
-
-- **This cancels an in-flight bump.** That is a behaviour change for
-  overlapping runs, which is why it was not landed with the silent-error
-  fill.
-- **Do not key by a static string only.** Two workflow_dispatch runs on
-  different refs (if that ever exists) must not cancel each other; ci.yml
-  already includes `${{ github.ref }}`.
-
-### Acceptance
-
-- `actionlint` stays clean.
-- A second Update run on `main` while the first is in progress cancels
-  the first, matching ci.yml.
-- A successful bump still commits and pushes `Formula/mortar.rb`.
-
 ## hash() rejects GNU `*filename` SHA256SUMS lines
 
 `hash` in `scripts/update.sh:30` prints `$1` only when `$2 == f`. GNU
