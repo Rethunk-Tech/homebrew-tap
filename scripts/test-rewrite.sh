@@ -86,6 +86,7 @@ bin="$tmp/bin"
 mkdir -p "$bin"
 stub_curl_tag() {
   tag=$1
+  asc=${2-}
   cat >"$bin/curl" <<EOF
 #!/bin/sh
 dest=
@@ -107,13 +108,20 @@ for a in "\$@"; do
   esac
 done
 case \$url in
-  *.asc) : >"\$dest" ;;
+  *.asc)
+    if [ -n "$asc" ]; then
+      cp "$asc" "\$dest"
+    else
+      : >"\$dest"
+    fi
+    ;;
   *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
 esac
 EOF
   chmod +x "$bin/curl"
 }
-cat >"$bin/gpg" <<EOF
+stub_gpg() {
+  cat >"$bin/gpg" <<EOF
 #!/bin/sh
 for a in "\$@"; do
   [ "\$a" = "--verify" ] || continue
@@ -124,8 +132,9 @@ for a in "\$@"; do
 done
 exit 0
 EOF
-chmod +x "$bin/gpg"
-
+  chmod +x "$bin/gpg"
+}
+stub_gpg
 stub_curl_tag ""
 if PATH="$bin:$PATH" scripts/update.sh >"$tmp/empty-latest.out" 2>"$tmp/empty-latest.err"; then
   echo "update.sh accepted an empty latest tag" >&2
@@ -157,6 +166,37 @@ if PATH="$bin:$PATH" scripts/update.sh >"$tmp/badsig.out" 2>"$tmp/badsig.err"; t
   exit 1
 fi
 grep -q 'SHA256SUMS not signed' "$tmp/badsig.err"
+
+grep -F -q 'D8B1C4C205C5FB3633CB8B9900B75959B637DCB5' scripts/update.sh
+grep -F -q 'scripts/mortar-archive-keyring.asc' scripts/update.sh
+
+test_gnupg=$tmp/test-gnupg
+install -d -m 700 "$test_gnupg"
+GNUPGHOME=$test_gnupg gpg --batch --passphrase '' --pinentry-mode loopback --quick-gen-key 'Mortar tap test <tap-test@invalid>' default default never
+test_fpr=$(GNUPGHOME=$test_gnupg gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+[ -n "$test_fpr" ]
+GNUPGHOME=$test_gnupg gpg --batch --export --armor >"$tmp/test-keyring.asc"
+GNUPGHOME=$test_gnupg gpg --batch --yes --pinentry-mode loopback --passphrase '' --detach-sign -o "$tmp/SHA256SUMS.asc" testdata/SHA256SUMS
+cp testdata/SHA256SUMS "$tmp/sums"
+rm -f "$bin/gpg"
+stub_curl_tag v9.9.9 "$tmp/SHA256SUMS.asc"
+if MORTAR_UPDATE_FPR="$test_fpr" MORTAR_UPDATE_KEYRING="$tmp/test-keyring.asc" PATH="$bin:$PATH" scripts/update.sh >"$tmp/realsig.out" 2>"$tmp/realsig.err"; then
+  :
+else
+  echo "update.sh rejected a SHA256SUMS signed by the test key" >&2
+  cat "$tmp/realsig.err" >&2
+  exit 1
+fi
+grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
+grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
+cp "$formula_orig" Formula/mortar.rb
+
+if MORTAR_UPDATE_FPR=0000000000000000000000000000000000000000 MORTAR_UPDATE_KEYRING="$tmp/test-keyring.asc" PATH="$bin:$PATH" scripts/update.sh >"$tmp/wrongfpr.out" 2>"$tmp/wrongfpr.err"; then
+  echo "update.sh accepted a signature that did not match FPR" >&2
+  exit 1
+fi
+grep -q 'SHA256SUMS not signed' "$tmp/wrongfpr.err"
+stub_gpg
 
 stub_curl_tag '..'
 if PATH="$bin:$PATH" scripts/update.sh >"$tmp/dottag.out" 2>"$tmp/dottag.err"; then

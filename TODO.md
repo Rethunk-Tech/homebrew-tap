@@ -41,50 +41,6 @@ Rejected: `uses_from_macos`. This formula is linux-only.
   this section records that Homebrew has no such dep.
 - AppImage url, sha256, and rewrite script are unchanged.
 
-## GPG verify has no signed testdata
-
-`scripts/test-rewrite.sh` stubs `gpg` and `curl` for the unsigned and
-missing-hash paths of `scripts/update.sh`. The happy path — import
-`scripts/mortar-archive-keyring.asc`, `VALIDSIG` for
-`D8B1C4C205C5FB3633CB8B9900B75959B637DCB5`, then rewrite — is not
-exercised. The vendored keyring is public-only, so this tree cannot mint
-a real `SHA256SUMS.asc` for `testdata/SHA256SUMS`.
-
-Decided shape: add a **test-only** keypair used solely by
-`scripts/test-rewrite.sh` (not the Mortar packages key). Sign
-`testdata/SHA256SUMS`, point a test copy of the update flow at that
-keyring and fingerprint, assert `Formula/mortar.rb` is rewritten when
-the stub latest tag differs. Production `update.sh` keeps `FPR` and
-`scripts/mortar-archive-keyring.asc` unchanged.
-
-Rejected: committing a signature made with the production secret key.
-Rejected: calling live `gpg --verify` against GitHub in the gate.
-
-### Read
-
-1. `scripts/update.sh:6` `FPR`.
-2. `scripts/update.sh:25` import of `scripts/mortar-archive-keyring.asc`.
-3. `scripts/update.sh:26` `VALIDSIG $FPR`.
-4. `scripts/test-rewrite.sh` `bin/gpg` stub — the stand-in this replaces
-   for the success case only.
-
-### Traps
-
-- **Do not replace the production keyring with the test key.** Update.yml
-  must keep verifying Mortar's packages key.
-- **Parameterise FPR/keyring for the test**, or extract the verify+rewrite
-  tail; do not hard-code the test fingerprint into `update.sh`'s default
-  `FPR`.
-
-### Acceptance
-
-- `scripts/test-rewrite.sh` fails if verify is skipped or if VALIDSIG is
-  the wrong fingerprint.
-- `scripts/update.sh` defaults still match
-  `D8B1C4C205C5FB3633CB8B9900B75959B637DCB5` and
-  `scripts/mortar-archive-keyring.asc`.
-- Gate stays offline.
-
 ## formula test does not run the AppImage
 
 `test do` at `Formula/mortar.rb:34` checks that `bin/"mortar"` exists and

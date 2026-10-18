@@ -3,7 +3,8 @@
 # GPG verification against the vendored Mortar packages key. A release without a signed SHA256SUMS is rejected.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-FPR=D8B1C4C205C5FB3633CB8B9900B75959B637DCB5
+FPR=${MORTAR_UPDATE_FPR:-D8B1C4C205C5FB3633CB8B9900B75959B637DCB5}
+KEYRING=${MORTAR_UPDATE_KEYRING:-scripts/mortar-archive-keyring.asc}
 F=Formula/mortar.rb
 curl_get() {
   curl --proto '=https' --connect-timeout 10 --max-time 60 -L "$@"
@@ -30,7 +31,7 @@ curl_get -fsSLo "$tmp/SHA256SUMS" "$base/SHA256SUMS"
 curl_get -fsSLo "$tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc"
 export GNUPGHOME="$tmp/gnupg"
 install -d -m 700 "$GNUPGHOME"
-gpg --batch --quiet --import scripts/mortar-archive-keyring.asc
+gpg --batch --quiet --import "$KEYRING"
 if ! gpg --batch --status-fd 1 --verify "$tmp/SHA256SUMS.asc" "$tmp/SHA256SUMS" 2>/dev/null | grep -q "VALIDSIG $FPR"; then
   echo "update.sh: SHA256SUMS not signed by $FPR" >&2
   exit 1
