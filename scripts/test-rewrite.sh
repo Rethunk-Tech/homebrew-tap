@@ -166,3 +166,52 @@ fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
 cp "$formula_orig" Formula/mortar.rb
+
+awk '/^curl_get\(\)/,/^}/' scripts/update.sh | grep -q -- '-L' || {
+  echo "curl_get lacks -L; GitHub release assets 302" >&2
+  exit 1
+}
+cat >"$bin/curl" <<EOF
+#!/bin/sh
+dest=
+url=
+prev=
+follow=0
+for a in "\$@"; do
+  if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
+    dest=\$a
+    prev=
+    continue
+  fi
+  case \$a in
+    -L|--location) follow=1; continue ;;
+    -fsSI)
+      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9"
+      exit 0
+      ;;
+    -o|-fsSLo) prev=\$a ;;
+    http://*|https://*) url=\$a ;;
+  esac
+done
+case \$url in
+  *.asc) : >"\$dest" ;;
+  *SHA256SUMS)
+    if [ "\$follow" != 1 ]; then
+      : >"\$dest"
+    else
+      cp "$tmp/sums" "\$dest"
+    fi
+    ;;
+esac
+EOF
+chmod +x "$bin/curl"
+: >"$tmp/validsig"
+cp testdata/SHA256SUMS "$tmp/sums"
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/follow.out" 2>"$tmp/follow.err"; then
+  echo "update.sh failed a 302 SHA256SUMS that -L would follow" >&2
+  cat "$tmp/follow.err" >&2
+  exit 1
+fi
+grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
+grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
+cp "$formula_orig" Formula/mortar.rb

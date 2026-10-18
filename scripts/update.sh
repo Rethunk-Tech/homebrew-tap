@@ -6,11 +6,12 @@ cd "$(dirname "$0")/.."
 FPR=D8B1C4C205C5FB3633CB8B9900B75959B637DCB5
 F=Formula/mortar.rb
 curl_get() {
-  curl --proto '=https' --connect-timeout 10 --max-time 60 "$@"
+  curl --proto '=https' --connect-timeout 10 --max-time 60 -L "$@"
 }
 # GitHub's /releases/latest redirect is public. The Actions token is this tap's
 # repo-scoped github.token and must not be sent to Rethunk-Tech/mortar.
-latest=$(curl_get -fsSI -o /dev/null -w '%{redirect_url}' https://github.com/Rethunk-Tech/mortar/releases/latest)
+# HEAD stays unfollowed: -L would land on the tag page and empty %{redirect_url}.
+latest=$(curl --proto '=https' --connect-timeout 10 --max-time 60 -fsSI -o /dev/null -w '%{redirect_url}' https://github.com/Rethunk-Tech/mortar/releases/latest)
 tag=${latest##*/}
 if [ -z "$tag" ] || [ "$tag" = "latest" ]; then
   echo "update.sh: could not resolve latest tag from '$latest'" >&2
