@@ -18,6 +18,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Enable FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse libfuse2
+          sudo chmod a+rw /dev/fuse
       - name: Bump to the latest Mortar release
         run: scripts/update.sh
       - name: Commit

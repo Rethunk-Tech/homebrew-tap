@@ -9,6 +9,7 @@ class Mortar < Formula
   end
 
   depends_on :linux
+  depends_on "libfuse@2"
 
   on_linux do
     if Hardware::CPU.arm?
@@ -29,12 +30,11 @@ class Mortar < Formula
   def caveats
     <<~EOS
       Homebrew keeps Mortar up to date (brew upgrade mortar); Mortar's own updater stays off.
-      The AppImage needs FUSE 2 (libfuse2) on the host.
+      The AppImage uses FUSE 2 via the libfuse@2 dependency.
     EOS
   end
 
   test do
-    assert_path_exists bin/"mortar"
-    assert_predicate bin/"mortar", :executable?
+    assert_match version.to_s, shell_output("#{bin}/mortar --version")
   end
 end

@@ -23,6 +23,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Enable FUSE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fuse libfuse2
+          sudo chmod a+rw /dev/fuse
       - uses: Rethunk-Tech/gh-actions/setup-go@bc5fa5b1004205c9c9399fc941d79d5ada53c59b # v1.16
         with:
           go-version: "1.27.2"
@@ -37,3 +42,5 @@ jobs:
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           go install github.com/Rethunk-Tech/rethunk-gate-cli/cmd/gate@v0.6.7
       - run: gate
+      - name: brew test mortar
+        run: brew test mortar
