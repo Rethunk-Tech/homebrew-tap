@@ -1,3 +1,8 @@
+pre-commit:
+  jobs:
+    - name: gitleaks
+      run: gitleaks git --pre-commit --staged --redact --no-banner --log-level warn
+
 pre-push:
   jobs:
     # Everything the project has, detected rather than listed here, so this
