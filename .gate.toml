@@ -1,0 +1,4 @@
+# Detection only finds actionlint and shellcheck here; the formula rewrite
+# has no language toolchain to attach a test gate to.
+[gates.test]
+run = "scripts/test-rewrite.sh"
