@@ -50,3 +50,67 @@ if awk -v tag=v0.3.5 -v x86="$x86" -v arm="$arm" -f scripts/rewrite-formula.awk 
   exit 1
 fi
 grep -q 'sha256 before url' "$tmp/order.err"
+
+bin="$tmp/bin"
+mkdir -p "$bin"
+stub_curl_tag() {
+  tag=$1
+  cat >"$bin/curl" <<EOF
+#!/bin/sh
+if [ "\$1" = "-fsSI" ]; then
+  echo "https://github.com/Rethunk-Tech/mortar/releases/tag/$tag"
+  exit 0
+fi
+dest=\$2
+url=\$3
+case \$url in
+  *.asc) : >"\$dest" ;;
+  *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
+esac
+EOF
+  chmod +x "$bin/curl"
+}
+cat >"$bin/gpg" <<EOF
+#!/bin/sh
+for a in "\$@"; do
+  [ "\$a" = "--verify" ] || continue
+  if [ -f "$tmp/validsig" ]; then
+    echo "VALIDSIG D8B1C4C205C5FB3633CB8B9900B75959B637DCB5"
+  fi
+  exit 0
+done
+exit 0
+EOF
+chmod +x "$bin/gpg"
+
+stub_curl_tag ""
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/empty-latest.out" 2>"$tmp/empty-latest.err"; then
+  echo "update.sh accepted an empty latest tag" >&2
+  exit 1
+fi
+grep -q 'could not resolve latest tag' "$tmp/empty-latest.err"
+
+stub_curl_tag latest
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/word-latest.out" 2>"$tmp/word-latest.err"; then
+  echo "update.sh accepted tag 'latest'" >&2
+  exit 1
+fi
+grep -q 'could not resolve latest tag' "$tmp/word-latest.err"
+
+: >"$tmp/sums"
+: >"$tmp/validsig"
+stub_curl_tag v9.9.9
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/nohash.out" 2>"$tmp/nohash.err"; then
+  echo "update.sh accepted SHA256SUMS with no AppImage hashes" >&2
+  exit 1
+fi
+grep -q 'SHA256SUMS missing' "$tmp/nohash.err"
+
+cp testdata/SHA256SUMS "$tmp/sums"
+rm -f "$tmp/validsig"
+stub_curl_tag v9.9.9
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/badsig.out" 2>"$tmp/badsig.err"; then
+  echo "update.sh accepted an unsigned SHA256SUMS" >&2
+  exit 1
+fi
+grep -q 'SHA256SUMS not signed' "$tmp/badsig.err"
