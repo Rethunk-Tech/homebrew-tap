@@ -19,6 +19,35 @@ got_x86_hash=$(awk '/x86_64.AppImage/{getline; print}' "$tmp/out.rb")
 [ "$got_x86_url" = '      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.5/mortar-linux-x86_64.AppImage"' ]
 [ "$got_x86_hash" = "      sha256 \"$x86\"" ]
 
+# Arch predicates: intel gets x86_64; neither arm nor intel odies (no x86_64 url).
+ruby <<'RUBY'
+module Hardware
+  module CPU
+    class << self
+      attr_accessor :arm, :intel
+      def arm?; @arm; end
+      def intel?; @intel; end
+    end
+  end
+end
+def url(u); $url = u; end
+def sha256(_); end
+def odie(msg); $odie = msg; end
+code = File.read("Formula/mortar.rb")[/if Hardware::CPU\.arm\?.*?^    end/m]
+abort "Formula/mortar.rb: missing arch if/end" unless code
+Hardware::CPU.arm = false
+Hardware::CPU.intel = true
+eval code
+abort "intel did not select x86_64" unless $url.to_s.include?("x86_64")
+abort "intel called odie" if $odie
+$url = nil
+$odie = nil
+Hardware::CPU.intel = false
+eval code
+abort "unsupported arch set url #{$url.inspect}" if $url
+abort "unsupported arch did not odie" if $odie.to_s.empty?
+RUBY
+
 if awk -v tag= -v x86="$x86" -v arm="$arm" -f scripts/rewrite-formula.awk testdata/mortar.rb >"$tmp/empty-tag.rb" 2>"$tmp/empty-tag.err"; then
   echo "rewrite-formula.awk accepted an empty tag" >&2
   exit 1

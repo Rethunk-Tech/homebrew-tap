@@ -5,43 +5,6 @@ exists; this file is the only place that describes what does not.
 
 Sections are unordered.
 
-## non-ARM Linux is treated as x86_64
-
-`Formula/mortar.rb` branches on `Hardware::CPU.arm?` at `:14` and the `else`
-at `:17` installs `mortar-linux-x86_64.AppImage`. There is no
-`Hardware::CPU.intel?` check and no `odie` for any other Linux arch. A
-riscv64 or similar host would fetch and install the x86_64 AppImage.
-
-Decided shape: keep the ARM url/sha256 block; wrap the current `else`
-body in `Hardware::CPU.intel?`; `odie` with a one-line unsupported-arch
-message otherwise. No new bottles, no macOS.
-
-Rejected: a third AppImage url. Mortar does not publish one. Rejected:
-leaving the `else` and documenting the assumption only in caveats.
-
-### Read
-
-1. `Formula/mortar.rb:14` `Hardware::CPU.arm?` — the only arch predicate.
-2. `Formula/mortar.rb:17` `else` — x86_64 url and sha256.
-3. `scripts/rewrite-formula.awk` END — still expects exactly two url lines
-   and two sha256 lines after this change.
-
-### Traps
-
-- **Rewrite still has to see both urls.** `on_intel do` / `on_arm do`
-  (Homebrew DSL) is fine only if both url/sha256 pairs remain in the file
-  as two `url "` lines. A layout that emits one pair per bottle would
-  fail `rewrite-formula.awk`.
-- **Do not drop `on_linux`.** `depends_on :linux` at `:11` stays; this is
-  not a macOS formula.
-
-### Acceptance
-
-- ARM and Intel Linux still get the same two AppImage urls and hashes.
-- A formula evaluation where both `arm?` and `intel?` are false calls
-  `odie` and does not set an x86_64 url.
-- `scripts/test-rewrite.sh` still rewrites both hashes.
-
 ## caveats mention libfuse2 but the formula does not depend on it
 
 `def caveats` at `Formula/mortar.rb:27` tells the user the AppImage needs
