@@ -3,6 +3,11 @@ class Mortar < Formula
   homepage "https://mortar.rethunk.tech/"
   license "AGPL-3.0-only"
 
+  livecheck do
+    url "https://github.com/Rethunk-Tech/mortar/releases/latest"
+    strategy :github_latest
+  end
+
   depends_on :linux
 
   on_linux do
