@@ -1,0 +1,9 @@
+# name|repo|signed|linux_amd64|linux_arm64|windows_amd64|homepage|license|desc
+# signed=gpg: SHA256SUMS.asc must VALIDSIG the Mortar packages key.
+# signed=https: trust GitHub HTTPS SHA256SUMS and the asset hashes listed in it.
+mortar|Rethunk-Tech/mortar|gpg|mortar-linux-x86_64.AppImage|mortar-linux-aarch64.AppImage||https://mortar.rethunk.tech/|AGPL-3.0-only|Desktop mod manager for PC games: profiles and Nexus, GitHub, Thunderstore mods
+rgit|Rethunk-Tech/rethunk-git-cli|https|rgit-linux-amd64.tar.gz|rgit-linux-arm64.tar.gz|rgit-windows-amd64.zip|https://github.com/Rethunk-Tech/rethunk-git-cli|MIT|Git CLI (rgit)
+gate|Rethunk-Tech/rethunk-gate-cli|https|gate-linux-amd64.tar.gz|gate-linux-arm64.tar.gz|gate-windows-amd64.zip|https://github.com/Rethunk-Tech/rethunk-gate-cli|MIT|Local quality gates (gate)
+heft|Rethunk-Tech/heft|https|heft-linux-amd64.tar.gz|heft-linux-arm64.tar.gz||https://github.com/Rethunk-Tech/heft|MIT|Heft
+engined|Rethunk-Tech/engined|https|engined-linux-amd64.tar.gz|engined-linux-arm64.tar.gz||https://github.com/Rethunk-Tech/engined|MIT|Engined
+claude-format-hooks|Rethunk-Tech/claude-format-hooks|https|claude-format-hooks-linux-amd64.tar.gz|claude-format-hooks-linux-arm64.tar.gz|claude-format-hooks-windows-amd64.zip|https://github.com/Rethunk-Tech/claude-format-hooks|MIT|Claude format hooks

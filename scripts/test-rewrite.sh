@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 tmp=$(mktemp -d)
 formula_orig=$tmp/formula.orig.rb
 cp Formula/mortar.rb "$formula_orig"
-trap 'cp "$formula_orig" Formula/mortar.rb; rm -rf "$tmp"' EXIT
+trap 'cp "$formula_orig" Formula/mortar.rb; find Formula -type f ! -name mortar.rb -delete; rm -rf bucket "$tmp"' EXIT
 x86=$(awk '$2 == "mortar-linux-x86_64.AppImage" {print $1}' testdata/SHA256SUMS)
 arm=$(awk '$2 == "mortar-linux-aarch64.AppImage" {print $1}' testdata/SHA256SUMS)
 [ -n "$x86" ] && [ -n "$arm" ]
@@ -284,3 +284,132 @@ fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
 cp "$formula_orig" Formula/mortar.rb
+
+# Table: six tools, GPG only for Mortar, Scoop only when a windows-amd64 asset is named.
+got=$(awk -f scripts/parse-tools.awk scripts/tools.tsv)
+[ "$(printf '%s\n' "$got" | wc -l)" -eq 6 ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="gpg" {print $1}')" = mortar ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="https" {print $1}' | tr '\n' ' ')" = "rgit gate heft engined claude-format-hooks " ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$6!="" {print $1}' | tr '\n' ' ')" = "rgit gate claude-format-hooks " ]
+
+if echo 'too|few' | awk -f scripts/parse-tools.awk >"$tmp/nf.out" 2>"$tmp/nf.err"; then
+  echo "parse-tools.awk accepted a short row" >&2
+  exit 1
+fi
+grep -q 'expected 9 fields' "$tmp/nf.err"
+
+if echo 'x|Rethunk-Tech/x|https||linux-arm64||https://example|MIT|d' | awk -f scripts/parse-tools.awk >"$tmp/nolinux.out" 2>"$tmp/nolinux.err"; then
+  echo "parse-tools.awk accepted an empty linux_amd64" >&2
+  exit 1
+fi
+grep -q 'linux_amd64' "$tmp/nolinux.err"
+
+if echo 'x|Rethunk-Tech/x|pgp|a.tar.gz|b.tar.gz||https://example|MIT|d' | awk -f scripts/parse-tools.awk >"$tmp/signed.out" 2>"$tmp/signed.err"; then
+  echo "parse-tools.awk accepted signed=pgp" >&2
+  exit 1
+fi
+grep -q 'signed must be gpg or https' "$tmp/signed.err"
+
+rgit_sums=$tmp/rgit.SHA256SUMS
+cat >"$rgit_sums" <<'EOF'
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  rgit-linux-amd64.tar.gz
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb  rgit-linux-arm64.tar.gz
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  rgit-windows-amd64.zip
+EOF
+stub_multi_url() {
+  sums_rgit=${1:-}
+  cat >"$bin/curl" <<EOF
+#!/bin/sh
+dest=
+url=
+prev=
+head=0
+for a in "\$@"; do
+  if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
+    dest=\$a
+    prev=
+    continue
+  fi
+  case \$a in
+    -L|--location) continue ;;
+    -fsSI) head=1 ;;
+    -o|-fsSLo) prev=\$a ;;
+    http://*|https://*) url=\$a ;;
+  esac
+done
+if [ "\$head" = 1 ]; then
+  case \$url in
+    *Rethunk-Tech/mortar/releases/latest)
+      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v0.3.5"
+      ;;
+    *rethunk-git-cli/releases/latest)
+      echo "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/tag/v1.2.3"
+      ;;
+    *)
+      echo "https://github.com/Rethunk-Tech/skip/releases/tag/latest"
+      ;;
+  esac
+  exit 0
+fi
+case \$url in
+  *rethunk-git-cli/*/SHA256SUMS)
+    if [ -n "$sums_rgit" ]; then
+      cp "$sums_rgit" "\$dest"
+    else
+      exit 22
+    fi
+    ;;
+  *) exit 22 ;;
+esac
+EOF
+  chmod +x "$bin/curl"
+}
+
+stub_multi_url "$rgit_sums"
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/create.out" 2>"$tmp/create.err"; then
+  echo "update.sh failed to create rgit formula from a matching release" >&2
+  cat "$tmp/create.err" >&2
+  exit 1
+fi
+grep -q 'rgit v1.2.3' "$tmp/create.out"
+grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-linux-arm64.tar.gz' Formula/rgit.rb
+grep -q 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' Formula/rgit.rb
+grep -q 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' Formula/rgit.rb
+grep -q 'class Rgit ' Formula/rgit.rb
+[ -f bucket/rgit.json ]
+grep -q 'rgit-windows-amd64.zip' bucket/rgit.json
+grep -q 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' bucket/rgit.json
+grep -q '"version": "1.2.3"' bucket/rgit.json
+[ ! -f Formula/heft.rb ]
+[ ! -f Formula/gate.rb ]
+
+# Update: existing formula moves to the new tag (same fixture sums).
+PATH="$bin:$PATH" scripts/update.sh >"$tmp/current.out" 2>"$tmp/current.err" || {
+  echo "update.sh failed when rgit was already at v1.2.3" >&2
+  cat "$tmp/current.err" >&2
+  exit 1
+}
+grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
+
+sed -i 's/v1.2.3/v0.1.0/g' Formula/rgit.rb
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/update.out" 2>"$tmp/update.err"; then
+  echo "update.sh failed to update an existing rgit formula" >&2
+  cat "$tmp/update.err" >&2
+  exit 1
+fi
+grep -q 'rgit v1.2.3' "$tmp/update.out"
+grep -q 'download/v1.2.3/rgit-linux-amd64.tar.gz' Formula/rgit.rb
+grep -q 'download/v1.2.3/rgit-linux-arm64.tar.gz' Formula/rgit.rb
+
+rm -f Formula/rgit.rb bucket/rgit.json
+: >"$tmp/rgit.empty"
+stub_multi_url "$tmp/rgit.empty"
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/skip.out" 2>"$tmp/skip.err"; then
+  echo "update.sh failed a skip (no matching rgit assets)" >&2
+  cat "$tmp/skip.err" >&2
+  exit 1
+fi
+grep -q 'rgit: skip: no matching release' "$tmp/skip.err"
+[ ! -f Formula/rgit.rb ]
+[ ! -d bucket ] || [ ! -f bucket/rgit.json ]
