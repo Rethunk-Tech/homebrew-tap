@@ -5,21 +5,28 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 FPR=D8B1C4C205C5FB3633CB8B9900B75959B637DCB5
 F=Formula/mortar.rb
+curl_get() {
+  curl --proto '=https' --connect-timeout 10 --max-time 60 "$@"
+}
 # GitHub's /releases/latest redirect is public. The Actions token is this tap's
 # repo-scoped github.token and must not be sent to Rethunk-Tech/mortar.
-latest=$(curl -fsSI -o /dev/null -w '%{redirect_url}' https://github.com/Rethunk-Tech/mortar/releases/latest)
+latest=$(curl_get -fsSI -o /dev/null -w '%{redirect_url}' https://github.com/Rethunk-Tech/mortar/releases/latest)
 tag=${latest##*/}
 if [ -z "$tag" ] || [ "$tag" = "latest" ]; then
   echo "update.sh: could not resolve latest tag from '$latest'" >&2
   exit 1
 fi
-current=$(grep -o 'download/v[^/]*' "$F" | head -1)
+if [[ ! "$tag" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+  echo "update.sh: invalid latest tag '$tag'" >&2
+  exit 1
+fi
+current=$(grep -m1 -o 'download/v[^/]*' "$F")
 [ "$current" != "download/$tag" ] || exit 0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 base="https://github.com/Rethunk-Tech/mortar/releases/download/$tag"
-curl -fsSLo "$tmp/SHA256SUMS" "$base/SHA256SUMS"
-curl -fsSLo "$tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc"
+curl_get -fsSLo "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+curl_get -fsSLo "$tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc"
 export GNUPGHOME="$tmp/gnupg"
 install -d -m 700 "$GNUPGHOME"
 gpg --batch --quiet --import scripts/mortar-archive-keyring.asc
@@ -27,7 +34,9 @@ if ! gpg --batch --status-fd 1 --verify "$tmp/SHA256SUMS.asc" "$tmp/SHA256SUMS" 
   echo "update.sh: SHA256SUMS not signed by $FPR" >&2
   exit 1
 fi
-hash() { awk -v f="$1" '$2 == f {print $1}' "$tmp/SHA256SUMS"; }
+hash() {
+  awk -v f="$1" '($2 == f || $2 == "*" f) && $1 ~ /^[0-9a-f]{64}$/ { print $1; exit }' "$tmp/SHA256SUMS"
+}
 x86=$(hash mortar-linux-x86_64.AppImage)
 arm=$(hash mortar-linux-aarch64.AppImage)
 if [ -z "$x86" ] || [ -z "$arm" ]; then

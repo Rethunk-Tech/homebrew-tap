@@ -4,7 +4,7 @@ BEGIN {
     exit 1
   }
 }
-/url "/ {
+/url "/ && /AppImage/ {
   sub(/download\/v[^\/]*/, "download/" tag)
   want = /aarch64/ ? arm : x86
   urls++

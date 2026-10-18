@@ -3,7 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+formula_orig=$tmp/formula.orig.rb
+cp Formula/mortar.rb "$formula_orig"
+trap 'cp "$formula_orig" Formula/mortar.rb; rm -rf "$tmp"' EXIT
 x86=$(awk '$2 == "mortar-linux-x86_64.AppImage" {print $1}' testdata/SHA256SUMS)
 arm=$(awk '$2 == "mortar-linux-aarch64.AppImage" {print $1}' testdata/SHA256SUMS)
 [ -n "$x86" ] && [ -n "$arm" ]
@@ -57,12 +59,24 @@ stub_curl_tag() {
   tag=$1
   cat >"$bin/curl" <<EOF
 #!/bin/sh
-if [ "\$1" = "-fsSI" ]; then
-  echo "https://github.com/Rethunk-Tech/mortar/releases/tag/$tag"
-  exit 0
-fi
-dest=\$2
-url=\$3
+dest=
+url=
+prev=
+for a in "\$@"; do
+  if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
+    dest=\$a
+    prev=
+    continue
+  fi
+  case \$a in
+    -fsSI)
+      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/$tag"
+      exit 0
+      ;;
+    -o|-fsSLo) prev=\$a ;;
+    http://*|https://*) url=\$a ;;
+  esac
+done
 case \$url in
   *.asc) : >"\$dest" ;;
   *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
@@ -114,3 +128,41 @@ if PATH="$bin:$PATH" scripts/update.sh >"$tmp/badsig.out" 2>"$tmp/badsig.err"; t
   exit 1
 fi
 grep -q 'SHA256SUMS not signed' "$tmp/badsig.err"
+
+stub_curl_tag '..'
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/dottag.out" 2>"$tmp/dottag.err"; then
+  echo "update.sh accepted tag '..'" >&2
+  exit 1
+fi
+grep -q 'invalid latest tag' "$tmp/dottag.err"
+
+stub_curl_tag 'v1.0;rm'
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/sctag.out" 2>"$tmp/sctag.err"; then
+  echo "update.sh accepted a tag with a semicolon" >&2
+  exit 1
+fi
+grep -q 'invalid latest tag' "$tmp/sctag.err"
+
+: >"$tmp/validsig"
+cp testdata/SHA256SUMS "$tmp/sums"
+stub_curl_tag v9.9.9
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/textsums.out" 2>"$tmp/textsums.err"; then
+  echo "update.sh rejected a two-space SHA256SUMS" >&2
+  cat "$tmp/textsums.err" >&2
+  exit 1
+fi
+grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
+grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
+grep -q 'releases/latest' Formula/mortar.rb
+cp "$formula_orig" Formula/mortar.rb
+
+awk '{ print $1 " *" $2 }' testdata/SHA256SUMS >"$tmp/sums"
+stub_curl_tag v9.9.9
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/starsums.out" 2>"$tmp/starsums.err"; then
+  echo "update.sh rejected a GNU *filename SHA256SUMS" >&2
+  cat "$tmp/starsums.err" >&2
+  exit 1
+fi
+grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
+grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
+cp "$formula_orig" Formula/mortar.rb
