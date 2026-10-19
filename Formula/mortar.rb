@@ -35,6 +35,7 @@ class Mortar < Formula
   end
 
   test do
-    assert_match version.to_s, shell_output("#{bin}/mortar --version")
+    # brew test gets no FUSE mount on CI runners; the AppImage runtime's extract-and-run mode needs none.
+    assert_match version.to_s, shell_output("#{bin}/mortar --appimage-extract-and-run --version")
   end
 end

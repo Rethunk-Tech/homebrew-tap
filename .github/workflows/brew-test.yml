@@ -25,7 +25,6 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q fuse libfuse2t64
           sudo modprobe fuse || true
-          sudo chmod a+rw /dev/fuse
       - name: Install and test mortar
         run: |
           # setup-homebrew taps this checkout as rethunk-tech/tap; brew refuses a bare formula path.
