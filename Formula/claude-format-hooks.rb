@@ -10,11 +10,11 @@ class ClaudeFormatHooks < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-darwin-arm64"
-      sha256 "d2f3f2988e8ff7ecd1e1458993ef93cc10b15ead284fd4db614d3c340fa24ba7"
+      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.3/format-dispatch-darwin-arm64"
+      sha256 "ae146a67edab9da3d306b8a1891d48016121a5f1d5b5746757eb807cd2f01b64"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-darwin-amd64"
-      sha256 "5315ff8ef3277d396cac5871c0fb2b1fa763c702984e7242d1177560aa7aaa5e"
+      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.3/format-dispatch-darwin-amd64"
+      sha256 "46c436372ba76b0bfbb6a18d817d87a153dd63390d2072b03b507d222e346700"
     else
       odie "claude-format-hooks is only packaged for macOS and Linux x86_64 and aarch64"
     end
@@ -22,11 +22,11 @@ class ClaudeFormatHooks < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-linux-arm64"
-      sha256 "cc3f43c39dea45d2ea0c4184ee5d23616798907c75325d5435a459cc14f0d727"
+      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.3/format-dispatch-linux-arm64"
+      sha256 "acd0a65424432e4de67d2de9229115f2177943ed85ddd3f8cecfaf68fb1713a6"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-linux-amd64"
-      sha256 "a8097065d791dacca8b54971374135b0bba67018197bdd9e06c3297d8c9b6577"
+      url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.3/format-dispatch-linux-amd64"
+      sha256 "e3ea87b9c64d233e57fec1bbc82204016da79d0c2f809a5667a89e1307783766"
     else
       odie "claude-format-hooks is only packaged for macOS and Linux x86_64 and aarch64"
     end
