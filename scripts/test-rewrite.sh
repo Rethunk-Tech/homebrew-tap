@@ -560,3 +560,8 @@ fi
 grep -q 'rgit: skip: no matching release' "$tmp/skip.err"
 [ ! -f Formula/rgit.rb ]
 [ ! -d bucket ] || [ ! -f bucket/rgit.json ]
+
+if awk '/^on:/{p=1} p&&/^jobs:/{exit} p' .github/workflows/brew-test.yml | grep -q pull_request; then
+  echo "brew-test.yml installs formulas on pull_request" >&2
+  exit 1
+fi

@@ -6,8 +6,6 @@ on:
   push:
     branches: [main]
     paths: ["Formula/**", ".github/workflows/brew-test.yml"]
-  pull_request:
-    paths: ["Formula/**", ".github/workflows/brew-test.yml"]
   workflow_dispatch:
 
 permissions:
