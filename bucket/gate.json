@@ -1,0 +1,18 @@
+{
+  "version": "0.6.8",
+  "description": "Runs a project's gates concurrently, keeps every byte in a log",
+  "homepage": "https://github.com/Rethunk-Tech/rethunk-gate-cli",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.6.8/gate-windows-amd64.exe",
+      "hash": "366490ec2b6abdfcc0f8a72d678047c88b8d6bc10555c49ab4352e94530cc3f4"
+    }
+  },
+  "bin": [
+    [
+      "gate-windows-amd64.exe",
+      "gate"
+    ]
+  ]
+}

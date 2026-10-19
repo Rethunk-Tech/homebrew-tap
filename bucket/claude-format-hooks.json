@@ -1,0 +1,18 @@
+{
+  "version": "0.5.2",
+  "description": "Claude Code PostToolUse format/lint dispatcher hook",
+  "homepage": "https://github.com/Rethunk-Tech/claude-format-hooks",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-windows-amd64.exe",
+      "hash": "2c8622df9ed77c8136f3f904a79a70758716d5f48ba327c1122671fb9ff9b6dd"
+    }
+  },
+  "bin": [
+    [
+      "format-dispatch-windows-amd64.exe",
+      "format-dispatch"
+    ]
+  ]
+}
