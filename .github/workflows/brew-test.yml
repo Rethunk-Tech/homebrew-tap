@@ -20,10 +20,11 @@ jobs:
         with:
           persist-credentials: false
       - uses: Homebrew/actions/setup-homebrew@4790763c0a3ba4036f72634dc079c4a7dfcd4878 # main
-      - name: FUSE for the AppImage
+      # The AppImage's GUI libraries load even for --version; a desktop has them, the runner does not.
+      - name: FUSE and Mortar's desktop libraries
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q fuse libfuse2t64
+          sudo apt-get install -y -q fuse libfuse2t64 libegl1 libgtk-3-0t64 libwebkit2gtk-4.1-0
           sudo modprobe fuse || true
       - name: Install and test mortar
         run: |
