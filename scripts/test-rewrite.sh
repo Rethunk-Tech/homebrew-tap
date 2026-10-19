@@ -565,3 +565,9 @@ if awk '/^on:/{p=1} p&&/^jobs:/{exit} p' .github/workflows/brew-test.yml | grep 
   echo "brew-test.yml installs formulas on pull_request" >&2
   exit 1
 fi
+if grep -q 'go install' .github/workflows/ci.yml; then
+  echo "ci.yml go-installs tools without artifact hashes" >&2
+  exit 1
+fi
+grep -q '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' .github/workflows/ci.yml
+grep -q '14e384a1ddacd7366aa1e9f4f8ab535de2ef19bef2d032fb8ed7b96abe9437e4' .github/workflows/ci.yml
