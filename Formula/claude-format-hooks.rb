@@ -18,7 +18,9 @@ class ClaudeFormatHooks < Formula
     else
       odie "claude-format-hooks is only packaged for macOS and Linux x86_64 and aarch64"
     end
-  end  on_linux do
+  end
+
+  on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/Rethunk-Tech/claude-format-hooks/releases/download/v0.5.2/format-dispatch-linux-arm64"
       sha256 "cc3f43c39dea45d2ea0c4184ee5d23616798907c75325d5435a459cc14f0d727"

@@ -10,8 +10,6 @@ class Engined < Formula
 
   depends_on :linux
 
-  depends_on "bun"
-
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/Rethunk-Tech/engined/releases/download/v0.2.9/engined-linux-arm64.tar.gz"
@@ -25,12 +23,7 @@ class Engined < Formula
   end
 
   def install
-    libexec.install Dir["*"]
-    (bin/"engined").write <<~EOS
-      #!/bin/bash
-      exec "#{Formula['bun'].opt_bin}/bun" "#{libexec}/dist/main.js" "$@"
-    EOS
-    chmod 0755, bin/"engined"
+    bin.install "engined"
   end
 
   test do

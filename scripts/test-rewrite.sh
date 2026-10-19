@@ -517,17 +517,20 @@ grep -q 'download/v1.2.3/heft-linux-amd64' Formula/heft.rb
 [ ! -f bucket/heft.json ]
 
 grep -q 'engined v1.2.3' "$tmp/create.out"
-grep -q 'depends_on "bun"' Formula/engined.rb
+if grep -q 'depends_on "bun"' Formula/engined.rb; then
+  echo "engined ships a compiled binary and needs no bun" >&2
+  exit 1
+fi
 grep -q 'depends_on :linux' Formula/engined.rb
 grep -q 'engined-linux-amd64.tar.gz' Formula/engined.rb
-grep -q 'dist/main.js' Formula/engined.rb
-grep -F -q "Formula['bun'].opt_bin" Formula/engined.rb
+grep -q 'bin.install "engined"' Formula/engined.rb
 
 grep -q 'claude-format-hooks v1.2.3' "$tmp/create.out"
 grep -q 'class ClaudeFormatHooks ' Formula/claude-format-hooks.rb
 grep -q 'bin.install File.basename(stable.url) => "format-dispatch"' Formula/claude-format-hooks.rb
 grep -q 'format-dispatch --version' Formula/claude-format-hooks.rb
 grep -q 'download/v1.2.3/format-dispatch-darwin-amd64' Formula/claude-format-hooks.rb
+for f in Formula/*.rb; do ruby -c "$f" >/dev/null || { echo "$f is not valid Ruby" >&2; exit 1; }; done
 grep -q "$(h64 a1)" Formula/claude-format-hooks.rb
 grep -q "$(h64 a2)" Formula/claude-format-hooks.rb
 [ -f bucket/claude-format-hooks.json ]

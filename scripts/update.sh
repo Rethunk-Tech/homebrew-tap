@@ -69,25 +69,22 @@ write_formula() {
       odie "${name} is only packaged for ${platforms}"
     end
   end
-
 EOF
     )
+    # Command substitution drops the heredoc's trailing newlines; on_linux must start on its own line.
+    macos_block+=$'\n\n'
   else
     platforms="Linux x86_64 and aarch64"
     linux_dep=$'  depends_on :linux\n\n'
     macos_block=""
   fi
   if [ "$install" = archive ]; then
-    bun_dep=$'  depends_on "bun"\n\n'
+    # The release tarball holds the self-contained binary at its root.
+    bun_dep=""
     install_block=$(
       cat <<EOF
   def install
-    libexec.install Dir["*"]
-    (bin/"${cmd}").write <<~EOS
-      #!/bin/bash
-      exec "#{Formula['bun'].opt_bin}/bun" "#{libexec}/dist/main.js" "\$@"
-    EOS
-    chmod 0755, bin/"${cmd}"
+    bin.install "${cmd}"
   end
 EOF
     )

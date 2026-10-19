@@ -18,7 +18,9 @@ class Gate < Formula
     else
       odie "gate is only packaged for macOS and Linux x86_64 and aarch64"
     end
-  end  on_linux do
+  end
+
+  on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.6.8/gate-linux-arm64"
       sha256 "f0e006e612412cfee90b6bdf2c1fd808ed89c6edc0cb8627e170e2575d73a577"
