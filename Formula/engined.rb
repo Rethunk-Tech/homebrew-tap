@@ -12,11 +12,11 @@ class Engined < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.2.11/engined-linux-arm64.tar.gz"
-      sha256 "f627350c0a1da18014297580462b4a41c97acf783ef1f24bd9ff8b3b2ac5f81f"
+      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.2.12/engined-linux-arm64.tar.gz"
+      sha256 "3f88ea982ee0b1f256b7a1691e9323bb4b808c353742ab46e784e3f00b384b6a"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.2.11/engined-linux-amd64.tar.gz"
-      sha256 "08992112d50e320946eb8b3b6b725763feba3993c00d4b20703ffca05ae0f9dd"
+      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.2.12/engined-linux-amd64.tar.gz"
+      sha256 "9152856f94bf4fbcfade9e46d86af5b47dccc8684836dcded0b0369213f44336"
     else
       odie "engined is only packaged for Linux x86_64 and aarch64"
     end
