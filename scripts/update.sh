@@ -172,8 +172,8 @@ update_mortar_from_url() {
   mortar_tmp=$tmp_root/mortar
   mkdir -p "$mortar_tmp"
   base="https://github.com/Rethunk-Tech/mortar/releases/download/$tag"
-  curl_get -fsSLo "$mortar_tmp/SHA256SUMS" "$base/SHA256SUMS"
-  curl_get -fsSLo "$mortar_tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc"
+  curl_get -fsSLo "$mortar_tmp/SHA256SUMS" "$base/SHA256SUMS" || { echo "update.sh: mortar $tag: no SHA256SUMS" >&2; exit 1; }
+  curl_get -fsSLo "$mortar_tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc" || { echo "update.sh: mortar $tag: no SHA256SUMS.asc" >&2; exit 1; }
   export GNUPGHOME="$mortar_tmp/gnupg"
   install -d -m 700 "$GNUPGHOME"
   gpg --batch --quiet --import "$KEYRING"

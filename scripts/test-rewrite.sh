@@ -477,6 +477,9 @@ EOF
   chmod +x "$bin/curl"
 }
 
+# The stub's latest Mortar is v0.3.5: pin the working copy to it so this case covers the other tools whatever release
+# is committed (the EXIT trap restores Formula/).
+sed -i 's|/download/v[^/]*/|/download/v0.3.5/|' Formula/mortar.rb
 stub_multi_url create
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/create.out" 2>"$tmp/create.err"; then
   echo "update.sh failed to create formulas from matching releases" >&2
