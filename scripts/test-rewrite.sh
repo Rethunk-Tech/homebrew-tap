@@ -3,9 +3,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 tmp=$(mktemp -d)
-formula_orig=$tmp/formula.orig.rb
-cp Formula/mortar.rb "$formula_orig"
-trap 'cp "$formula_orig" Formula/mortar.rb; find Formula -type f ! -name mortar.rb -delete; rm -rf bucket "$tmp"' EXIT
+# The update workflow runs this between generating and committing, so whatever Formula/ and bucket/ held
+# before the tests is what they hold after.
+mkdir -p "$tmp/saved"
+cp -a Formula "$tmp/saved/"
+[ -d bucket ] && cp -a bucket "$tmp/saved/"
+trap 'rm -rf Formula bucket; cp -a "$tmp/saved/." .; rm -rf "$tmp"' EXIT
 x86=$(awk '$2 == "mortar-linux-x86_64.AppImage" {print $1}' testdata/SHA256SUMS)
 arm=$(awk '$2 == "mortar-linux-aarch64.AppImage" {print $1}' testdata/SHA256SUMS)
 [ -n "$x86" ] && [ -n "$arm" ]
@@ -191,7 +194,7 @@ else
 fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
-cp "$formula_orig" Formula/mortar.rb
+cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 
 if MORTAR_UPDATE_FPR=0000000000000000000000000000000000000000 MORTAR_UPDATE_KEYRING="$tmp/test-keyring.asc" PATH="$bin:$PATH" scripts/update.sh >"$tmp/wrongfpr.out" 2>"$tmp/wrongfpr.err"; then
   echo "update.sh accepted a signature that did not match FPR" >&2
@@ -225,7 +228,7 @@ fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
 grep -q 'releases/latest' Formula/mortar.rb
-cp "$formula_orig" Formula/mortar.rb
+cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 
 awk '{ print $1 " *" $2 }' testdata/SHA256SUMS >"$tmp/sums"
 stub_curl_tag v9.9.9
@@ -236,7 +239,7 @@ if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/starsums.out" 2>"$tmp/starsums.e
 fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
-cp "$formula_orig" Formula/mortar.rb
+cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 
 curl_get_src=$(awk '/^curl_get\(\)/,/^}/' scripts/update.sh)
 printf '%s\n' "$curl_get_src" | grep -q -- '-L' || {
@@ -295,7 +298,7 @@ if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/follow.out" 2>"$tmp/follow.err";
 fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
-cp "$formula_orig" Formula/mortar.rb
+cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 
 cat >"$bin/curl" <<EOF
 #!/bin/sh
@@ -332,7 +335,7 @@ if PATH="$bin:$PATH" scripts/update.sh >"$tmp/evilredir.out" 2>"$tmp/evilredir.e
   exit 1
 fi
 grep -q 'non-GitHub host' "$tmp/evilredir.err"
-cp "$formula_orig" Formula/mortar.rb
+cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 
 # Table: six tools, GPG only for Mortar, Scoop only when a windows-amd64 asset is named.
 got=$(awk -f scripts/parse-tools.awk scripts/tools.tsv)
