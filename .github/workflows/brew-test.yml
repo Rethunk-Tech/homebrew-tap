@@ -25,7 +25,10 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q fuse libfuse2t64
           sudo modprobe fuse || true
+          sudo chmod a+rw /dev/fuse
       - name: Install and test mortar
         run: |
-          brew install --formula ./Formula/mortar.rb
-          brew test mortar
+          # setup-homebrew taps this checkout as rethunk-tech/tap; brew refuses a bare formula path.
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew install --formula rethunk-tech/tap/mortar
+          brew test rethunk-tech/tap/mortar
