@@ -11,7 +11,25 @@ FPR=${MORTAR_UPDATE_FPR:-D8B1C4C205C5FB3633CB8B9900B75959B637DCB5}
 KEYRING=${MORTAR_UPDATE_KEYRING:-scripts/mortar-archive-keyring.asc}
 F=Formula/mortar.rb
 curl_get() {
-  curl --proto '=https' --connect-timeout 10 --max-time 60 -L "$@"
+  local a url='' final host
+  for a in "$@"; do
+    case $a in
+      https://*) url=$a ;;
+    esac
+  done
+  host=${url#https://}
+  host=${host%%/*}
+  if [ "$host" != github.com ] && [ "$host" != objects.githubusercontent.com ] && [ "$host" != release-assets.githubusercontent.com ]; then
+    echo "update.sh: refused host ${host:-empty}" >&2
+    return 1
+  fi
+  final=$(curl --proto '=https' --connect-timeout 10 --max-time 60 --max-redirs 5 -L -w '%{url_effective}' "$@") || return 1
+  host=${final#https://}
+  host=${host%%/*}
+  if [ "$host" != github.com ] && [ "$host" != objects.githubusercontent.com ] && [ "$host" != release-assets.githubusercontent.com ]; then
+    echo "update.sh: redirect to non-GitHub host ${host:-empty}" >&2
+    return 1
+  fi
 }
 camel() {
   awk -F- '{for (i = 1; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2); print ""}' <<<"$1"

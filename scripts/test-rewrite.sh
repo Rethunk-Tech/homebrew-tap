@@ -33,8 +33,8 @@ end
 def url(u); $url = u; end
 def sha256(_); end
 def odie(msg); $odie = msg; end
-code = File.read("Formula/mortar.rb")[/if Hardware::CPU\.arm\?.*?^    end/m]
-abort "Formula/mortar.rb: missing arch if/end" unless code
+code = File.read("testdata/mortar.rb")[/if Hardware::CPU\.arm\?.*?^    end/m]
+abort "testdata/mortar.rb: missing arch if/end" unless code
 Hardware::CPU.arm = false
 Hardware::CPU.intel = true
 eval code
@@ -47,6 +47,7 @@ eval code
 abort "unsupported arch set url #{$url.inspect}" if $url
 abort "unsupported arch did not odie" if $odie.to_s.empty?
 RUBY
+grep -F -q 'File.read("testdata/mortar.rb")' scripts/test-rewrite.sh
 
 if awk -v tag= -v x86="$x86" -v arm="$arm" -f scripts/rewrite-formula.awk testdata/mortar.rb >"$tmp/empty-tag.rb" 2>"$tmp/empty-tag.err"; then
   echo "rewrite-formula.awk accepted an empty tag" >&2
@@ -117,6 +118,7 @@ case \$url in
     ;;
   *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
 esac
+printf '%s\n' "\$url"
 EOF
   chmod +x "$bin/curl"
 }
@@ -236,8 +238,17 @@ grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
 cp "$formula_orig" Formula/mortar.rb
 
-awk '/^curl_get\(\)/,/^}/' scripts/update.sh | grep -q -- '-L' || {
+curl_get_src=$(awk '/^curl_get\(\)/,/^}/' scripts/update.sh)
+printf '%s\n' "$curl_get_src" | grep -q -- '-L' || {
   echo "curl_get lacks -L; GitHub release assets 302" >&2
+  exit 1
+}
+printf '%s\n' "$curl_get_src" | grep -q -- '--max-redirs' || {
+  echo "curl_get lacks --max-redirs" >&2
+  exit 1
+}
+printf '%s\n' "$curl_get_src" | grep -q 'objects.githubusercontent.com' || {
+  echo "curl_get lacks GitHub asset host allowlist" >&2
   exit 1
 }
 cat >"$bin/curl" <<EOF
@@ -272,6 +283,7 @@ case \$url in
     fi
     ;;
 esac
+printf '%s\n' "https://objects.githubusercontent.com/github-production-release-asset/SHA256SUMS"
 EOF
 chmod +x "$bin/curl"
 : >"$tmp/validsig"
@@ -283,6 +295,43 @@ if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/follow.out" 2>"$tmp/follow.err";
 fi
 grep -q 'download/v9.9.9/mortar-linux-x86_64.AppImage' Formula/mortar.rb
 grep -q 'download/v9.9.9/mortar-linux-aarch64.AppImage' Formula/mortar.rb
+cp "$formula_orig" Formula/mortar.rb
+
+cat >"$bin/curl" <<EOF
+#!/bin/sh
+dest=
+url=
+prev=
+for a in "\$@"; do
+  if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
+    dest=\$a
+    prev=
+    continue
+  fi
+  case \$a in
+    -L|--location|--max-redirs) continue ;;
+    -fsSI)
+      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9"
+      exit 0
+      ;;
+    -o|-fsSLo) prev=\$a ;;
+    http://*|https://*) url=\$a ;;
+  esac
+done
+case \$url in
+  *.asc) : >"\$dest" ;;
+  *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
+esac
+printf '%s\n' "https://evil.example/SHA256SUMS"
+EOF
+chmod +x "$bin/curl"
+: >"$tmp/validsig"
+cp testdata/SHA256SUMS "$tmp/sums"
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/evilredir.out" 2>"$tmp/evilredir.err"; then
+  echo "update.sh followed a SHA256SUMS redirect off GitHub" >&2
+  exit 1
+fi
+grep -q 'non-GitHub host' "$tmp/evilredir.err"
 cp "$formula_orig" Formula/mortar.rb
 
 # Table: six tools, GPG only for Mortar, Scoop only when a windows-amd64 asset is named.
@@ -420,6 +469,7 @@ case \$url in
   *claude-format-hooks/*/format-dispatch-windows-amd64.exe.sha256) cp "$tmp/sha256/format-dispatch-windows-amd64.exe.sha256" "\$dest" ;;
   *) exit 22 ;;
 esac
+printf '%s\n' "\$url"
 EOF
   chmod +x "$bin/curl"
 }
