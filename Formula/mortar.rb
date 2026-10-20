@@ -13,11 +13,11 @@ class Mortar < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.8/mortar-linux-aarch64.AppImage"
-      sha256 "b3cd9631acf5dac0650dceac5d665085d221177dc9c65d896a6ff0bea1641bde"
+      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.9/mortar-linux-aarch64.AppImage"
+      sha256 "e4c4f6b8b52879b595a5726637efb11aed834f50ad4e6488102921e414f9b2b0"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.8/mortar-linux-x86_64.AppImage"
-      sha256 "874d2ce56698bf723cae98768d9e35504ae6061f7694755b224d9d02c2bed9b9"
+      url "https://github.com/Rethunk-Tech/mortar/releases/download/v0.3.9/mortar-linux-x86_64.AppImage"
+      sha256 "c52a358349df2c2850069d0e515aeac53916d0c5c1570c7bf513b349d60998dc"
     else
       odie "Mortar is only packaged for Linux x86_64 and aarch64"
     end
