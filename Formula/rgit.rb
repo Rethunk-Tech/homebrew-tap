@@ -12,11 +12,11 @@ class Rgit < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v2.2.4/rgit-v2.2.4-linux-arm64"
-      sha256 "31950fc65ede90b064edf85be409454e2583aed81c8f3dcb8b17cf43b06228aa"
+      url "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v2.3.0/rgit-v2.3.0-linux-arm64"
+      sha256 "86f2bfd03b721c5fb61e1924a92a615efc4a6ebcaea0a9edfa67357ada01ab90"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v2.2.4/rgit-v2.2.4-linux-amd64"
-      sha256 "0fb37003b896ccfdf8ce1fec7a147f5714a110ace7a380f66f0006be406f302e"
+      url "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v2.3.0/rgit-v2.3.0-linux-amd64"
+      sha256 "212d5aff60a081478171ffd7ae5ca4a7bdb2099b6684fbbbaa0fccd44da64a83"
     else
       odie "rgit is only packaged for Linux x86_64 and aarch64"
     end
