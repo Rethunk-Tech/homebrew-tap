@@ -23,7 +23,7 @@ curl_get() {
     echo "update.sh: refused host ${host:-empty}" >&2
     return 1
   fi
-  final=$(curl --proto '=https' --connect-timeout 10 --max-time 60 --max-redirs 5 -L -w '%{url_effective}' "$@") || return 1
+  final=$(curl --retry 18 --retry-delay 10 --proto '=https' --connect-timeout 10 --max-time 60 --max-redirs 5 -L -w '%{url_effective}' "$@") || return 1
   host=${final#https://}
   host=${host%%/*}
   if [ "$host" != github.com ] && [ "$host" != objects.githubusercontent.com ] && [ "$host" != release-assets.githubusercontent.com ]; then
@@ -172,8 +172,14 @@ update_mortar_from_url() {
   mortar_tmp=$tmp_root/mortar
   mkdir -p "$mortar_tmp"
   base="https://github.com/Rethunk-Tech/mortar/releases/download/$tag"
-  curl_get -fsSLo "$mortar_tmp/SHA256SUMS" "$base/SHA256SUMS" || { echo "update.sh: mortar $tag: no SHA256SUMS" >&2; exit 1; }
-  curl_get -fsSLo "$mortar_tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc" || { echo "update.sh: mortar $tag: no SHA256SUMS.asc" >&2; exit 1; }
+  curl_get -fsSLo "$mortar_tmp/SHA256SUMS" "$base/SHA256SUMS" || {
+    echo "update.sh: mortar $tag: no SHA256SUMS" >&2
+    exit 1
+  }
+  curl_get -fsSLo "$mortar_tmp/SHA256SUMS.asc" "$base/SHA256SUMS.asc" || {
+    echo "update.sh: mortar $tag: no SHA256SUMS.asc" >&2
+    exit 1
+  }
   export GNUPGHOME="$mortar_tmp/gnupg"
   install -d -m 700 "$GNUPGHOME"
   gpg --batch --quiet --import "$KEYRING"
@@ -210,7 +216,7 @@ tmp_root=$(mktemp -d)
 trap 'rm -rf "$tmp_root"' EXIT
 
 while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 homepage license desc darwin_amd64 darwin_arm64 install cmd; do
-  latest=$(curl --proto '=https' --connect-timeout 10 --max-time 60 -fsSI -o /dev/null -w '%{redirect_url}' "https://github.com/$repo/releases/latest" || true)
+  latest=$(curl --retry 18 --retry-delay 10 --proto '=https' --connect-timeout 10 --max-time 60 -fsSI -o /dev/null -w '%{redirect_url}' "https://github.com/$repo/releases/latest" || true)
   tag=${latest##*/}
   if [ "$checksum" = gpg ]; then
     update_mortar_from_url "$latest"

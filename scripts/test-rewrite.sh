@@ -147,6 +147,16 @@ if PATH="$bin:$PATH" scripts/update.sh >"$tmp/empty-latest.out" 2>"$tmp/empty-la
 fi
 grep -q 'could not resolve latest tag' "$tmp/empty-latest.err"
 
+# A transient GitHub 502/504 must not fail the update: every internet fetch retries.
+for f in scripts/update.sh .github/workflows/ci.yml; do
+  bad=$(grep 'curl --proto' "$f" | grep -v -- '--retry 18 --retry-delay 10' || true)
+  if [ -n "$bad" ]; then
+    echo "curl without transient-error retries in $f:" >&2
+    printf '%s\n' "$bad" >&2
+    exit 1
+  fi
+done
+
 stub_curl_tag latest
 if PATH="$bin:$PATH" scripts/update.sh >"$tmp/word-latest.out" 2>"$tmp/word-latest.err"; then
   echo "update.sh accepted tag 'latest'" >&2
@@ -533,7 +543,10 @@ grep -q 'class ClaudeFormatHooks ' Formula/claude-format-hooks.rb
 grep -q 'bin.install File.basename(stable.url) => "format-dispatch"' Formula/claude-format-hooks.rb
 grep -q 'format-dispatch --version' Formula/claude-format-hooks.rb
 grep -q 'download/v1.2.3/format-dispatch-darwin-amd64' Formula/claude-format-hooks.rb
-for f in Formula/*.rb; do ruby -c "$f" >/dev/null || { echo "$f is not valid Ruby" >&2; exit 1; }; done
+for f in Formula/*.rb; do ruby -c "$f" >/dev/null || {
+  echo "$f is not valid Ruby" >&2
+  exit 1
+}; done
 grep -q "$(h64 a1)" Formula/claude-format-hooks.rb
 grep -q "$(h64 a2)" Formula/claude-format-hooks.rb
 [ -f bucket/claude-format-hooks.json ]
