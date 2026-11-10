@@ -45,7 +45,6 @@ Install, upgrade, and maintainer bump steps: [HUMANS.md](HUMANS.md).
 | --- | --- |
 | [HUMANS.md](HUMANS.md) | Install, upgrade, uninstall, maintainer bump |
 | [AGENTS.md](AGENTS.md) | Layout and invariants |
-| [TODO.md](TODO.md) | Work that is decided but not built |
 
 ## License
 
