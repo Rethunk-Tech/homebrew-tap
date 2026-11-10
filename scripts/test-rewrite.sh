@@ -593,3 +593,30 @@ if grep -q 'go install' .github/workflows/ci.yml; then
 fi
 grep -q '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' .github/workflows/ci.yml
 grep -q '14e384a1ddacd7366aa1e9f4f8ab535de2ef19bef2d032fb8ed7b96abe9437e4' .github/workflows/ci.yml
+
+for f in .github/workflows/*.yml; do
+  if ! awk '
+    /^jobs:/ { exit !ok }
+    /^permissions:[[:space:]]*\{\}/ { ok=1 }
+    /^permissions:[[:space:]]*$/ { want=1; next }
+    want && /^[[:space:]]+contents:[[:space:]]+read[[:space:]]*$/ { ok=1 }
+    want && /^[[:space:]]+contents:[[:space:]]+write/ { ok=0 }
+    END { if (!ok) exit 1 }
+  ' "$f"; then
+    echo "$f: top-level permissions must be {} or contents: read" >&2
+    exit 1
+  fi
+  jobs_missing=$(awk '
+    /^jobs:/ { j=1; next }
+    j && /^  [A-Za-z0-9_-]+:/ {
+      if (n && !p) print n
+      n=$1; sub(/:$/,"",n); p=0
+    }
+    j && /^    permissions:/ { p=1 }
+    END { if (n && !p) print n }
+  ' "$f")
+  if [ -n "$jobs_missing" ]; then
+    echo "$f: job missing permissions: $jobs_missing" >&2
+    exit 1
+  fi
+done

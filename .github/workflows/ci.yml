@@ -5,8 +5,7 @@ on:
     branches: [main]
   pull_request:
 
-permissions:
-  contents: read
+permissions: {}
 
 # A push that supersedes an in-flight run makes that run's verdict
 # irrelevant, so cancel it rather than paying for both. Keyed by ref, so
@@ -19,6 +18,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
