@@ -30,7 +30,7 @@ jobs:
         run: |
           extra=
           [ -d bucket ] && extra=bucket
-          git diff --quiet -- Formula $extra && exit 0
+          [ -z "$(git status --porcelain -- Formula $extra)" ] && exit 0
           scripts/test-rewrite.sh
           git add Formula
           [ -d bucket ] && git add bucket
