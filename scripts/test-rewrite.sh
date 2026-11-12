@@ -646,7 +646,7 @@ mkdir -p "$wf/Formula"
 git -C "$wf" init -q
 printf '%s\n' 'class New < Formula; end' >"$wf/Formula/new.rb"
 expr=$(printf '%s\n' "$line" | sed 's/^[[:space:]]*//')
-if (cd "$wf" && extra= && eval "$expr"); then
+if (cd "$wf" && extra= && : "$extra" && eval "$expr"); then
   echo "commit check treated untracked Formula/new.rb as no changes" >&2
   exit 1
 fi
