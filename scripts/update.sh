@@ -227,9 +227,15 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
     continue
   fi
   formula=Formula/${name}.rb
+  skip_formula=
   if [ -f "$formula" ]; then
     current=$(grep -m1 -o 'download/v[^/]*' "$formula" || true)
-    [ "$current" != "download/$tag" ] || continue
+    if [ "$current" = "download/$tag" ]; then
+      if [ -z "$windows_amd64" ] || { [ -f "bucket/${name}.json" ] && grep -Fq "\"version\": \"${tag#v}\"" "bucket/${name}.json"; }; then
+        continue
+      fi
+      skip_formula=1
+    fi
   fi
   ver=${tag#v}
   linux_amd64=${linux_amd64//\{VERSION\}/$ver}
@@ -263,8 +269,10 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
       continue
     fi
   fi
-  write_formula "$name" "$repo" "$tag" "$x86" "$arm" "$linux_amd64" "$linux_arm64" "$homepage" "$license" "$desc" "$darwin_amd64" "$darwin_arm64" "$darwin_amd64_hash" "$darwin_arm64_hash" "$install" "$cmd"
-  echo "$name $tag"
+  if [ -z "$skip_formula" ]; then
+    write_formula "$name" "$repo" "$tag" "$x86" "$arm" "$linux_amd64" "$linux_arm64" "$homepage" "$license" "$desc" "$darwin_amd64" "$darwin_arm64" "$darwin_amd64_hash" "$darwin_arm64_hash" "$install" "$cmd"
+    echo "$name $tag"
+  fi
   if [ -n "$windows_amd64" ]; then
     win=$(asset_hash "$checksum" "$windows_amd64" "$sums")
     if [ -z "$win" ]; then
