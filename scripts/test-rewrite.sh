@@ -386,6 +386,12 @@ if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||bare|' | awk -
 fi
 grep -q 'cmd is required' "$tmp/cmd.err"
 
+if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|Say "hi"|||bare|x' | awk -f scripts/parse-tools.awk >"$tmp/descq.out" 2>"$tmp/descq.err"; then
+  echo "parse-tools.awk accepted a double quote in desc" >&2
+  exit 1
+fi
+grep -q 'desc must not contain' "$tmp/descq.err"
+
 h64() { printf '%s' "$1" | awk '{while (length($0)<64) $0=$0 $0} {print substr($0,1,64)}'; }
 rgit_sums=$tmp/rgit.SHA256SUMS
 cat >"$rgit_sums" <<EOF
@@ -561,6 +567,17 @@ PATH="$bin:$PATH" scripts/update.sh >"$tmp/current.out" 2>"$tmp/current.err" || 
 }
 grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
 
+rm -f bucket/rgit.json
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/scoop-late.out" 2>"$tmp/scoop-late.err"; then
+  echo "update.sh failed to write a late windows-amd64 Scoop manifest" >&2
+  cat "$tmp/scoop-late.err" >&2
+  exit 1
+fi
+[ -f bucket/rgit.json ]
+grep -q 'rgit-v1.2.3-windows-amd64.exe' bucket/rgit.json
+grep -q '"version": "1.2.3"' bucket/rgit.json
+grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
+
 sed -i 's/v1.2.3/v0.1.0/g' Formula/rgit.rb
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/update.out" 2>"$tmp/update.err"; then
   echo "update.sh failed to update an existing rgit formula" >&2
@@ -620,3 +637,17 @@ for f in .github/workflows/*.yml; do
     exit 1
   fi
 done
+
+# Untracked Formula/*.rb must count as changes (git diff --quiet misses them).
+line=$(grep -E 'git (diff --quiet|status --porcelain) -- Formula' .github/workflows/update.yml)
+[ -n "$line" ]
+wf=$tmp/wf-commit
+mkdir -p "$wf/Formula"
+git -C "$wf" init -q
+printf '%s\n' 'class New < Formula; end' >"$wf/Formula/new.rb"
+expr=$(printf '%s\n' "$line" | sed 's/^[[:space:]]*//')
+if (cd "$wf" && extra= && eval "$expr"); then
+  echo "commit check treated untracked Formula/new.rb as no changes" >&2
+  exit 1
+fi
+echo "changes present"

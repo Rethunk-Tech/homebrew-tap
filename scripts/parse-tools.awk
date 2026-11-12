@@ -20,6 +20,10 @@ $3 != "gpg" && $13 == "" {
   print "parse-tools.awk: cmd is required" > "/dev/stderr"
   exit 1
 }
+$9 ~ /["\\]/ {
+  print "parse-tools.awk: desc must not contain \" or \\" > "/dev/stderr"
+  exit 1
+}
 { print; n++ }
 END {
   if (n < 1) {
