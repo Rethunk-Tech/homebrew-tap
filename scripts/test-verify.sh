@@ -12,7 +12,7 @@ mkkey() {
   GNUPGHOME=$tmp/$1 gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}'
 }
 fpr_a=$(mkkey a)
-fpr_b=$(mkkey b)
+mkkey b >/dev/null
 printf '%s  tool\n' "$(printf x | sha256sum | cut -d' ' -f1)" >"$tmp/SHA256SUMS"
 GNUPGHOME=$tmp/a gpg --batch --quiet --armor --detach-sign -o "$tmp/good.asc" "$tmp/SHA256SUMS"
 GNUPGHOME=$tmp/b gpg --batch --quiet --armor --detach-sign -o "$tmp/wrong.asc" "$tmp/SHA256SUMS"
