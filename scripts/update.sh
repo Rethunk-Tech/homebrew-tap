@@ -2,11 +2,18 @@
 # Point Formula/*.rb (and Scoop bucket/*.json) at each tool's latest release.
 # Mortar hashes come from SHA256SUMS after GPG verification against the vendored
 # Mortar packages key. Other tools trust SHA256SUMS or per-asset .sha256 files
-# fetched over HTTPS from GitHub and the asset hashes listed in them. A Mortar
+# fetched over HTTPS from GitHub and the asset hashes listed in them. gpgsums tools (rgit, gate,
+# heft, engined, claude-format-hooks) additionally need SHA256SUMS.asc signed by the Rethunk.Tech
+# release key; an unsigned newer release is refused and fails the run, the old manifest stays. A Mortar
 # release without a signed SHA256SUMS is rejected. Other tools with no matching
 # linux assets are skipped.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=verify-sums.sh
+. scripts/verify-sums.sh
+RELEASE_FPR=${RELEASE_UPDATE_FPR:-827D05536BF33C8F634EDBE3E60A9B0F6E3F276E}
+RELEASE_KEYRING=${RELEASE_UPDATE_KEYRING:-scripts/rethunk-release-signing.pub.asc}
+failed=0
 FPR=${MORTAR_UPDATE_FPR:-D8B1C4C205C5FB3633CB8B9900B75959B637DCB5}
 KEYRING=${MORTAR_UPDATE_KEYRING:-scripts/mortar-archive-keyring.asc}
 F=Formula/mortar.rb
@@ -203,7 +210,7 @@ update_mortar_from_url() {
 
 asset_hash() {
   local checksum=$1 asset=$2 sums=$3 dest
-  if [ "$checksum" = sha256sums ]; then
+  if [ "$checksum" = sha256sums ] || [ "$checksum" = gpgsums ]; then
     hash "$asset" "$sums"
     return 0
   fi
@@ -247,9 +254,14 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
   darwin_arm64=${darwin_arm64//\{VERSION\}/$ver}
   base="https://github.com/$repo/releases/download/$tag"
   sums=$tmp_root/${name}.SHA256SUMS
-  if [ "$checksum" = sha256sums ]; then
+  if [ "$checksum" = sha256sums ] || [ "$checksum" = gpgsums ]; then
     if ! curl_get -fsSLo "$sums" "$base/SHA256SUMS"; then
       echo "update.sh: $name: skip: no matching release" >&2
+      continue
+    fi
+    if [ "$checksum" = gpgsums ] && { ! curl_get -fsSLo "$sums.asc" "$base/SHA256SUMS.asc" || ! verify_sums "$sums" "$sums.asc" "$RELEASE_KEYRING" "$RELEASE_FPR" "$tmp_root/gnupg-$name"; }; then
+      echo "update.sh: $name $tag: SHA256SUMS not signed by $RELEASE_FPR; manifest left at the previous release" >&2
+      failed=1
       continue
     fi
   else
@@ -284,3 +296,4 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
     fi
   fi
 done < <(awk -f scripts/parse-tools.awk scripts/tools.tsv)
+exit "$failed"

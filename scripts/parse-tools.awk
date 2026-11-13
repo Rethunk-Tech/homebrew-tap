@@ -8,8 +8,8 @@ $1 == "" || $2 == "" || $4 == "" || $5 == "" {
   print "parse-tools.awk: name, repo, linux_amd64, and linux_arm64 are required" > "/dev/stderr"
   exit 1
 }
-$3 != "gpg" && $3 != "sha256sums" && $3 != "sha256" {
-  print "parse-tools.awk: checksum must be gpg, sha256sums, or sha256" > "/dev/stderr"
+$3 != "gpg" && $3 != "sha256sums" && $3 != "gpgsums" && $3 != "sha256" {
+  print "parse-tools.awk: checksum must be gpg, gpgsums, sha256sums, or sha256" > "/dev/stderr"
   exit 1
 }
 $3 != "gpg" && $12 != "bare" && $12 != "archive" {

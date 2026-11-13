@@ -13,7 +13,7 @@ No CLI, no `--help`, no config file for the tap, no caller-facing env vars. The 
 | `scripts/parse-tools.awk` | Requires thirteen fields per row; `checksum` is `gpg`, `sha256sums`, or `sha256`; name, repo, and both linux assets required; non-Mortar rows require `bare` or `archive` and a cmd. |
 | `scripts/update.sh` | No flags. See `HUMANS.md`. Loops the table. Mortar: GPG + `rewrite-formula.awk`. Others: HTTPS `SHA256SUMS` or per-asset `.sha256`, `{VERSION}` substitution, create/update `Formula/<name>.rb` (darwin urls when those columns are set; `depends_on :linux` when they are not; archive install is a bun wrapper over `dist/main.js`), optional `bucket/<name>.json`, skip with an info line when assets are missing. Sets `GNUPGHOME` itself for Mortar. `curl_get` follows at most 5 redirects and requires the request and final host in `{github.com, objects.githubusercontent.com, release-assets.githubusercontent.com}`. |
 | `scripts/rewrite-formula.awk` | Requires `-v tag=`, `-v x86=`, `-v arm=`. Expects exactly two `url` AppImage lines and two following `sha256` lines. Mortar only. |
-| `scripts/test-rewrite.sh` | No flags. Fixture rewrite (arch `eval` on `testdata/mortar.rb` only), stubbed `update.sh` failure paths, test-key GPG verify success path, table parse, create/update/skip. |
+| `scripts/test-rewrite.sh` | No flags; also runs `scripts/test-verify.sh` (wrong-key, garbage and missing signatures refused). Fixture rewrite (arch `eval` on `testdata/mortar.rb` only), stubbed `update.sh` failure paths, test-key GPG verify success path, table parse, create/update/skip. |
 | `gate` | `.gate.toml` `[gates.test] run = "scripts/test-rewrite.sh"`. |
 | Lefthook | `pre-push` → `gate`. No `pre-commit`. |
 

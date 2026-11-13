@@ -96,6 +96,7 @@ stub_curl_tag() {
 dest=
 url=
 prev=
+head=0
 for a in "\$@"; do
   if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
     dest=\$a
@@ -103,14 +104,18 @@ for a in "\$@"; do
     continue
   fi
   case \$a in
-    -fsSI)
-      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/$tag"
-      exit 0
-      ;;
+    -fsSI) head=1 ;;
     -o|-fsSLo) prev=\$a ;;
     http://*|https://*) url=\$a ;;
   esac
 done
+if [ "\$head" = 1 ]; then
+  case \$url in
+    */Rethunk-Tech/mortar/*) echo "https://github.com/Rethunk-Tech/mortar/releases/tag/$tag" ;;
+    *) echo "https://github.com/Rethunk-Tech/skip/releases/tag/latest" ;;
+  esac
+  exit 0
+fi
 case \$url in
   *.asc)
     if [ -n "$asc" ]; then
@@ -284,6 +289,7 @@ dest=
 url=
 prev=
 follow=0
+head=0
 for a in "\$@"; do
   if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
     dest=\$a
@@ -292,14 +298,18 @@ for a in "\$@"; do
   fi
   case \$a in
     -L|--location) follow=1; continue ;;
-    -fsSI)
-      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9"
-      exit 0
-      ;;
+    -fsSI) head=1 ;;
     -o|-fsSLo) prev=\$a ;;
     http://*|https://*) url=\$a ;;
   esac
 done
+if [ "\$head" = 1 ]; then
+  case \$url in
+    */Rethunk-Tech/mortar/*) echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9" ;;
+    *) echo "https://github.com/Rethunk-Tech/skip/releases/tag/latest" ;;
+  esac
+  exit 0
+fi
 case \$url in
   *.asc) : >"\$dest" ;;
   *SHA256SUMS)
@@ -329,6 +339,7 @@ cat >"$bin/curl" <<EOF
 dest=
 url=
 prev=
+head=0
 for a in "\$@"; do
   if [ "\$prev" = "-o" ] || [ "\$prev" = "-fsSLo" ]; then
     dest=\$a
@@ -337,14 +348,18 @@ for a in "\$@"; do
   fi
   case \$a in
     -L|--location|--max-redirs) continue ;;
-    -fsSI)
-      echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9"
-      exit 0
-      ;;
+    -fsSI) head=1 ;;
     -o|-fsSLo) prev=\$a ;;
     http://*|https://*) url=\$a ;;
   esac
 done
+if [ "\$head" = 1 ]; then
+  case \$url in
+    */Rethunk-Tech/mortar/*) echo "https://github.com/Rethunk-Tech/mortar/releases/tag/v9.9.9" ;;
+    *) echo "https://github.com/Rethunk-Tech/skip/releases/tag/latest" ;;
+  esac
+  exit 0
+fi
 case \$url in
   *.asc) : >"\$dest" ;;
   *SHA256SUMS) cp "$tmp/sums" "\$dest" ;;
@@ -365,8 +380,7 @@ cp "$tmp/saved/Formula/mortar.rb" Formula/mortar.rb
 got=$(awk -f scripts/parse-tools.awk scripts/tools.tsv)
 [ "$(printf '%s\n' "$got" | wc -l)" -eq 6 ]
 [ "$(printf '%s\n' "$got" | awk -F'|' '$3=="gpg" {print $1}')" = mortar ]
-[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="sha256sums" {print $1}' | tr '\n' ' ')" = "rgit gate heft engined " ]
-[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="sha256" {print $1}')" = claude-format-hooks ]
+[ "$(printf '%s\n' "$got" | awk -F'|' '$3=="gpgsums" {print $1}' | tr '\n' ' ')" = "rgit gate heft engined claude-format-hooks " ]
 [ "$(printf '%s\n' "$got" | awk -F'|' '$6!="" {print $1}' | tr '\n' ' ')" = "rgit gate claude-format-hooks " ]
 [ "$(printf '%s\n' "$got" | awk -F'|' '$10!="" {print $1}' | tr '\n' ' ')" = "gate claude-format-hooks " ]
 
@@ -386,7 +400,7 @@ if echo 'x|Rethunk-Tech/x|pgp|a|b||https://example|MIT|d|||bare|x' | awk -f scri
   echo "parse-tools.awk accepted checksum=pgp" >&2
   exit 1
 fi
-grep -q 'checksum must be gpg, sha256sums, or sha256' "$tmp/signed.err"
+grep -q 'checksum must be gpg, gpgsums, sha256sums, or sha256' "$tmp/signed.err"
 
 if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||tarball|x' | awk -f scripts/parse-tools.awk >"$tmp/inst.out" 2>"$tmp/inst.err"; then
   echo "parse-tools.awk accepted install=tarball" >&2
@@ -432,6 +446,25 @@ $(h64 ae)  engined-linux-amd64.tar.gz
 $(h64 af)  engined-linux-arm64.tar.gz
 EOF
 mkdir -p "$tmp/sha256"
+cfh_sums=$tmp/cfh.SHA256SUMS
+cat >"$cfh_sums" <<EOF
+$(h64 a1)  format-dispatch-linux-amd64
+$(h64 a2)  format-dispatch-linux-arm64
+$(h64 a3)  format-dispatch-darwin-amd64
+$(h64 a4)  format-dispatch-darwin-arm64
+$(h64 a5)  format-dispatch-windows-amd64.exe
+EOF
+rm -f "$bin/gpg" # the earlier cases stub gpg; these verify with the real one
+rel_gnupg=$tmp/rel-gnupg
+install -d -m 700 "$rel_gnupg"
+GNUPGHOME=$rel_gnupg gpg --batch --quiet --passphrase '' --pinentry-mode loopback --quick-gen-key 'tap release test <rel@invalid>' ed25519 sign never
+RELEASE_UPDATE_FPR=$(GNUPGHOME=$rel_gnupg gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+RELEASE_UPDATE_KEYRING=$tmp/rel-keyring.asc
+export RELEASE_UPDATE_FPR RELEASE_UPDATE_KEYRING
+GNUPGHOME=$rel_gnupg gpg --batch --export --armor >"$RELEASE_UPDATE_KEYRING"
+for f in rgit gate heft engined cfh; do
+  GNUPGHOME=$rel_gnupg gpg --batch --quiet --armor --detach-sign -o "$tmp/$f.SHA256SUMS.asc" "$tmp/$f.SHA256SUMS"
+done
 # hash-only and GNU two-space .sha256 both appear as checksum files
 printf '%s\n' "$(h64 a1)" >"$tmp/sha256/format-dispatch-linux-amd64.sha256"
 printf '%s  %s\n' "$(h64 a2)" format-dispatch-linux-arm64 >"$tmp/sha256/format-dispatch-linux-arm64.sha256"
@@ -490,11 +523,19 @@ if [ "$mode" = skip ]; then
   exit 22
 fi
 case \$url in
+  */SHA256SUMS.asc) [ "$mode" = unsigned ] && exit 22 ;;
+esac
+case \$url in
+  *rethunk-git-cli/*/SHA256SUMS.asc) cp "$tmp/rgit.SHA256SUMS.asc" "\$dest" ;;
+  *rethunk-gate-cli/*/SHA256SUMS.asc) cp "$tmp/gate.SHA256SUMS.asc" "\$dest" ;;
+  */heft/*/SHA256SUMS.asc) cp "$tmp/heft.SHA256SUMS.asc" "\$dest" ;;
+  */engined/*/SHA256SUMS.asc) cp "$tmp/engined.SHA256SUMS.asc" "\$dest" ;;
+  *claude-format-hooks/*/SHA256SUMS.asc) cp "$tmp/cfh.SHA256SUMS.asc" "\$dest" ;;
   *rethunk-git-cli/*/SHA256SUMS) cp "$rgit_sums" "\$dest" ;;
   *rethunk-gate-cli/*/SHA256SUMS) cp "$gate_sums" "\$dest" ;;
   */heft/*/SHA256SUMS) cp "$heft_sums" "\$dest" ;;
   */engined/*/SHA256SUMS) cp "$engined_sums" "\$dest" ;;
-  *claude-format-hooks/*/SHA256SUMS) exit 22 ;;
+  *claude-format-hooks/*/SHA256SUMS) cp "$cfh_sums" "\$dest" ;;
   *claude-format-hooks/*/format-dispatch-linux-amd64.sha256) cp "$tmp/sha256/format-dispatch-linux-amd64.sha256" "\$dest" ;;
   *claude-format-hooks/*/format-dispatch-linux-arm64.sha256) cp "$tmp/sha256/format-dispatch-linux-arm64.sha256" "\$dest" ;;
   *claude-format-hooks/*/format-dispatch-darwin-amd64.sha256) cp "$tmp/sha256/format-dispatch-darwin-amd64.sha256" "\$dest" ;;
@@ -602,6 +643,23 @@ grep -q 'rgit v1.2.3' "$tmp/update.out"
 grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
 grep -q 'download/v1.2.3/rgit-v1.2.3-linux-arm64' Formula/rgit.rb
 
+# A newer release without a valid signature is refused, fails the run and leaves the pinned manifest alone.
+sed -i 's/v1.2.3/v0.1.0/g' Formula/rgit.rb
+stub_multi_url unsigned
+if PATH="$bin:$PATH" scripts/update.sh >"$tmp/unsigned.out" 2>"$tmp/unsigned.err"; then
+  echo "update.sh accepted a release with no SHA256SUMS.asc" >&2
+  exit 1
+fi
+grep -q 'rgit v1.2.3: SHA256SUMS not signed' "$tmp/unsigned.err"
+grep -q 'download/v0.1.0/rgit-v0.1.0-linux-amd64' Formula/rgit.rb
+stub_multi_url create
+if RELEASE_UPDATE_FPR=0000000000000000000000000000000000000000 PATH="$bin:$PATH" scripts/update.sh >/dev/null 2>"$tmp/wrongkey.err"; then
+  echo "update.sh accepted a SHA256SUMS signed by another key" >&2
+  exit 1
+fi
+grep -q 'rgit v1.2.3: SHA256SUMS not signed' "$tmp/wrongkey.err"
+grep -q 'download/v0.1.0/rgit-v0.1.0-linux-amd64' Formula/rgit.rb
+
 rm -f Formula/rgit.rb Formula/gate.rb Formula/heft.rb Formula/engined.rb Formula/claude-format-hooks.rb
 rm -rf bucket
 stub_multi_url skip
@@ -665,3 +723,6 @@ if (cd "$wf" && extra= && : "$extra" && eval "$expr"); then
   exit 1
 fi
 echo "changes present"
+
+scripts/test-verify.sh >/dev/null 2>&1
+[ "$(gpg --with-colons --show-keys scripts/rethunk-release-signing.pub.asc | awk -F: '/^fpr/{print $10; exit}')" = "$(grep -m1 '^RELEASE_FPR=' scripts/update.sh | grep -o '[0-9A-F]\{40\}')" ]
