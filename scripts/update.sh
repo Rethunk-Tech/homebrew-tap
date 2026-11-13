@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Point Formula/*.rb (and Scoop bucket/*.json) at each tool's latest release.
 # Mortar hashes come from SHA256SUMS after GPG verification against the vendored
-# Mortar packages key. Other tools trust SHA256SUMS or per-asset .sha256 files
+# Mortar packages key. Other tools trust SHA256SUMS
 # fetched over HTTPS from GitHub and the asset hashes listed in them. gpgsums tools (rgit, gate,
 # heft, engined, claude-format-hooks) additionally need SHA256SUMS.asc signed by the Rethunk.Tech
 # release key; an unsigned newer release is refused and fails the run, the old manifest stays. A Mortar
@@ -47,16 +47,6 @@ camel() {
 }
 hash() {
   awk -v f="$1" '($2 == f || $2 == "*" f) && $1 ~ /^[0-9a-f]{64}$/ { print $1; exit }' "$2"
-}
-hash_file() {
-  local asset=$1 file=$2 h
-  [ -f "$file" ] || return 0
-  h=$(hash "$asset" "$file")
-  if [ -n "$h" ]; then
-    printf '%s\n' "$h"
-    return 0
-  fi
-  awk '$1 ~ /^[0-9a-f]{64}$/ { print $1; exit }' "$file"
 }
 
 write_formula() {
@@ -216,19 +206,6 @@ update_mortar_from_url() {
   echo "mortar $tag"
 }
 
-asset_hash() {
-  local checksum=$1 asset=$2 sums=$3 dest
-  if [ "$checksum" = sha256sums ] || [ "$checksum" = gpgsums ]; then
-    hash "$asset" "$sums"
-    return 0
-  fi
-  dest=$tmp_root/${name}.$(basename "$asset").sha256
-  if ! curl_get -fsSLo "$dest" "$base/${asset}.sha256" || [ ! -s "$dest" ]; then
-    return 0
-  fi
-  hash_file "$asset" "$dest"
-}
-
 tmp_root=$(mktemp -d)
 trap 'rm -rf "$tmp_root"' EXIT
 
@@ -279,8 +256,8 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
   else
     : >"$sums"
   fi
-  x86=$(asset_hash "$checksum" "$linux_amd64" "$sums")
-  arm=$(asset_hash "$checksum" "$linux_arm64" "$sums")
+  x86=$(hash "$linux_amd64" "$sums")
+  arm=$(hash "$linux_arm64" "$sums")
   if [ -z "$x86" ] || [ -z "$arm" ]; then
     echo "update.sh: $name: skip: no matching release" >&2
     continue
@@ -288,8 +265,8 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
   darwin_amd64_hash=""
   darwin_arm64_hash=""
   if [ -n "$darwin_amd64" ] || [ -n "$darwin_arm64" ]; then
-    darwin_amd64_hash=$(asset_hash "$checksum" "$darwin_amd64" "$sums")
-    darwin_arm64_hash=$(asset_hash "$checksum" "$darwin_arm64" "$sums")
+    darwin_amd64_hash=$(hash "$darwin_amd64" "$sums")
+    darwin_arm64_hash=$(hash "$darwin_arm64" "$sums")
     if [ -z "$darwin_amd64_hash" ] || [ -z "$darwin_arm64_hash" ]; then
       echo "update.sh: $name: skip: no matching release" >&2
       continue
@@ -300,7 +277,7 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
     echo "$name $tag"
   fi
   if [ -n "$windows_amd64" ]; then
-    win=$(asset_hash "$checksum" "$windows_amd64" "$sums")
+    win=$(hash "$windows_amd64" "$sums")
     if [ -z "$win" ]; then
       echo "update.sh: $name: skip: no windows-amd64 asset" >&2
     else

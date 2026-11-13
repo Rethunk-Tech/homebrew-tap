@@ -2,7 +2,6 @@
 # checksum=gpg: SHA256SUMS.asc must VALIDSIG the Mortar packages key.
 # checksum=gpgsums: SHA256SUMS.asc must VALIDSIG the Rethunk.Tech release key (scripts/rethunk-release-signing.pub.asc); applies to releases newer than the pinned ones.
 # checksum=sha256sums: trust GitHub HTTPS SHA256SUMS and the asset hashes listed in it.
-# checksum=sha256: trust GitHub HTTPS <asset>.sha256 files (no SHA256SUMS).
 # {VERSION} in an asset name is replaced with the tag without a leading v.
 mortar|Rethunk-Tech/mortar|gpg|mortar-linux-x86_64.AppImage|mortar-linux-aarch64.AppImage||https://mortar.rethunk.tech/|AGPL-3.0-only|Desktop mod manager for PC games: profiles and Nexus, GitHub, Thunderstore mods||||
 rgit|Rethunk-Tech/rethunk-git-cli|gpgsums|rgit-v{VERSION}-linux-amd64|rgit-v{VERSION}-linux-arm64|rgit-v{VERSION}-windows-amd64.exe|https://github.com/Rethunk-Tech/rethunk-git-cli|MIT|Symbol-granular git staging and commits|||bare|rgit

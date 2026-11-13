@@ -400,7 +400,7 @@ if echo 'x|Rethunk-Tech/x|pgp|a|b||https://example|MIT|d|||bare|x' | awk -f scri
   echo "parse-tools.awk accepted checksum=pgp" >&2
   exit 1
 fi
-grep -q 'checksum must be gpg, gpgsums, sha256sums, or sha256' "$tmp/signed.err"
+grep -q 'checksum must be gpg, gpgsums, or sha256sums' "$tmp/signed.err"
 
 if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||tarball|x' | awk -f scripts/parse-tools.awk >"$tmp/inst.out" 2>"$tmp/inst.err"; then
   echo "parse-tools.awk accepted install=tarball" >&2
@@ -445,7 +445,6 @@ cat >"$engined_sums" <<EOF
 $(h64 ae)  engined-linux-amd64.tar.gz
 $(h64 af)  engined-linux-arm64.tar.gz
 EOF
-mkdir -p "$tmp/sha256"
 cfh_sums=$tmp/cfh.SHA256SUMS
 cat >"$cfh_sums" <<EOF
 $(h64 a1)  format-dispatch-linux-amd64
@@ -465,12 +464,6 @@ GNUPGHOME=$rel_gnupg gpg --batch --export --armor >"$RELEASE_UPDATE_KEYRING"
 for f in rgit gate heft engined cfh; do
   GNUPGHOME=$rel_gnupg gpg --batch --quiet --armor --detach-sign -o "$tmp/$f.SHA256SUMS.asc" "$tmp/$f.SHA256SUMS"
 done
-# hash-only and GNU two-space .sha256 both appear as checksum files
-printf '%s\n' "$(h64 a1)" >"$tmp/sha256/format-dispatch-linux-amd64.sha256"
-printf '%s  %s\n' "$(h64 a2)" format-dispatch-linux-arm64 >"$tmp/sha256/format-dispatch-linux-arm64.sha256"
-printf '%s  %s\n' "$(h64 a3)" format-dispatch-darwin-amd64 >"$tmp/sha256/format-dispatch-darwin-amd64.sha256"
-printf '%s  %s\n' "$(h64 a4)" format-dispatch-darwin-arm64 >"$tmp/sha256/format-dispatch-darwin-arm64.sha256"
-printf '%s  %s\n' "$(h64 a5)" format-dispatch-windows-amd64.exe >"$tmp/sha256/format-dispatch-windows-amd64.exe.sha256"
 
 stub_multi_url() {
   mode=$1
@@ -536,11 +529,6 @@ case \$url in
   */heft/*/SHA256SUMS) cp "$heft_sums" "\$dest" ;;
   */engined/*/SHA256SUMS) cp "$engined_sums" "\$dest" ;;
   *claude-format-hooks/*/SHA256SUMS) cp "$cfh_sums" "\$dest" ;;
-  *claude-format-hooks/*/format-dispatch-linux-amd64.sha256) cp "$tmp/sha256/format-dispatch-linux-amd64.sha256" "\$dest" ;;
-  *claude-format-hooks/*/format-dispatch-linux-arm64.sha256) cp "$tmp/sha256/format-dispatch-linux-arm64.sha256" "\$dest" ;;
-  *claude-format-hooks/*/format-dispatch-darwin-amd64.sha256) cp "$tmp/sha256/format-dispatch-darwin-amd64.sha256" "\$dest" ;;
-  *claude-format-hooks/*/format-dispatch-darwin-arm64.sha256) cp "$tmp/sha256/format-dispatch-darwin-arm64.sha256" "\$dest" ;;
-  *claude-format-hooks/*/format-dispatch-windows-amd64.exe.sha256) cp "$tmp/sha256/format-dispatch-windows-amd64.exe.sha256" "\$dest" ;;
   *) exit 22 ;;
 esac
 printf '%s\n' "\$url"

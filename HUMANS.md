@@ -8,7 +8,7 @@ User install is in `README.md`. This file is how to operate the tap.
 
 1. Follows `https://github.com/<repo>/releases/latest` (HTTPS only, 10s connect / 60s total).
 2. Accepts a tag matching `^v[0-9][0-9A-Za-z._-]*$`.
-3. Substitutes `{VERSION}` in asset names with the tag minus a leading `v`. Downloads checksums for that tag: Mortar uses `SHA256SUMS` plus `SHA256SUMS.asc`; `sha256sums` tools use `SHA256SUMS`; `sha256` tools use per-asset `<asset>.sha256`.
+3. Substitutes `{VERSION}` in asset names with the tag minus a leading `v`. Downloads checksums for that tag: Mortar uses `SHA256SUMS` plus `SHA256SUMS.asc`; `sha256sums` tools use `SHA256SUMS`.
 
 ### Mortar (signed SHA256SUMS)
 
@@ -20,7 +20,7 @@ Exit 0 with no rewrite if the formula already points at that tag. A Mortar relea
 
 ### Other tools (HTTPS checksums)
 
-Trust model: GitHub HTTPS for `/releases/latest` and for checksum files; asset SHA-256 values must appear in `SHA256SUMS` or in the matching `<asset>.sha256` (64-hex token, optionally followed by the filename). There is no GPG signature check (only Mortar publishes `SHA256SUMS.asc`).
+Trust model: GitHub HTTPS for `/releases/latest` and for checksum files; asset SHA-256 values must appear in `SHA256SUMS`. There is no GPG signature check (only Mortar publishes `SHA256SUMS.asc`).
 
 If the latest tag cannot be resolved, checksum files are missing, or the linux-amd64/linux-arm64 assets named in the table are absent (or darwin assets are named but missing), that tool is skipped (info on stderr) and no placeholder formula is written. A matching linux pair creates `Formula/<name>.rb` on first sight and overwrites it on later tags. Linux-only tools get `depends_on :linux`; tools with darwin assets also emit `on_macos` url/sha256 pairs. Bare install copies the downloaded file to `cmd`; archive install (`engined`) depends on Homebrew core `bun` and wraps `dist/main.js`. A windows-amd64 asset with a matching hash also writes `bucket/<name>.json` (Scoop); tools without that asset have no Scoop manifest.
 

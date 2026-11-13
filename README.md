@@ -35,7 +35,7 @@ Install, upgrade, and maintainer bump steps: [HUMANS.md](HUMANS.md).
 
 - Mortar ships the release AppImage: `mortar-linux-aarch64.AppImage` on ARM Linux, `mortar-linux-x86_64.AppImage` on Intel Linux.
 - Mortar SHA-256 pins come from the release `SHA256SUMS` after `scripts/update.sh` checks the signature against the Mortar packages key (`D8B1 C4C2 05C5 FB36 33CB 8B99 00B7 5959 B637 DCB5`).
-- Other tools pin hashes from the release `SHA256SUMS` or per-asset `.sha256` files fetched over HTTPS from GitHub (unsigned; hashes in those files must match the named assets).
+- Other tools pin hashes from the release `SHA256SUMS` fetched over HTTPS from GitHub (unsigned; hashes in that file must match the named assets).
 - `rgit`, `gate`, `heft`, `engined` and `claude-format-hooks` releases newer than the pinned ones must carry `SHA256SUMS.asc` signed by `827D 0553 6BF3 3C8F 634E DBE3 E60A 9B0F 6E3F 276E` (`scripts/rethunk-release-signing.pub.asc`); an unsigned or wrong-key release is refused and the run fails.
 - Cut-over: manifests already pinned (released before signing) stay installable without a signature check; checks start with each tool's first release after its signing workflow.
 - A scheduled GitHub Actions workflow (cron `17 */6 * * *`, plus `workflow_dispatch`) creates or updates each formula/manifest when the expected assets exist.
