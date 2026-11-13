@@ -183,7 +183,9 @@ update_mortar_from_url() {
   export GNUPGHOME="$mortar_tmp/gnupg"
   install -d -m 700 "$GNUPGHOME"
   gpg --batch --quiet --import "$KEYRING"
-  if ! gpg --batch --status-fd 1 --verify "$mortar_tmp/SHA256SUMS.asc" "$mortar_tmp/SHA256SUMS" 2>/dev/null | grep -q "VALIDSIG $FPR"; then
+  gpg --batch --status-fd 1 --verify "$mortar_tmp/SHA256SUMS.asc" "$mortar_tmp/SHA256SUMS" >"$mortar_tmp/gpg.status" 2>/dev/null || true
+  # gpg still prints VALIDSIG (exit 0) for a signature from an expired or revoked key.
+  if ! grep -q "^\[GNUPG:\] VALIDSIG $FPR" "$mortar_tmp/gpg.status" || grep -qE '^\[GNUPG:\] (REVKEYSIG|EXPKEYSIG) ' "$mortar_tmp/gpg.status"; then
     echo "update.sh: SHA256SUMS not signed by $FPR" >&2
     exit 1
   fi

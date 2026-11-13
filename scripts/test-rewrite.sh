@@ -131,7 +131,7 @@ stub_gpg() {
 for a in "\$@"; do
   [ "\$a" = "--verify" ] || continue
   if [ -f "$tmp/validsig" ]; then
-    echo "VALIDSIG D8B1C4C205C5FB3633CB8B9900B75959B637DCB5"
+    echo "[GNUPG:] VALIDSIG D8B1C4C205C5FB3633CB8B9900B75959B637DCB5"
   fi
   exit 0
 done
@@ -211,6 +211,20 @@ if MORTAR_UPDATE_FPR=0000000000000000000000000000000000000000 MORTAR_UPDATE_KEYR
   exit 1
 fi
 grep -q 'SHA256SUMS not signed' "$tmp/wrongfpr.err"
+
+# gpg exits 0 and emits VALIDSIG for a signature from an expired key; update.sh must still refuse it.
+exp_gnupg=$tmp/exp-gnupg
+install -d -m 700 "$exp_gnupg"
+GNUPGHOME=$exp_gnupg gpg --batch --passphrase '' --pinentry-mode loopback --faked-system-time 20200101T000000 --quick-gen-key 'Mortar tap expired <tap-exp@invalid>' default default 1d
+exp_fpr=$(GNUPGHOME=$exp_gnupg gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10; exit}')
+GNUPGHOME=$exp_gnupg gpg --batch --export --armor >"$tmp/exp-keyring.asc"
+GNUPGHOME=$exp_gnupg gpg --batch --yes --pinentry-mode loopback --passphrase '' --faked-system-time 20200101T120000 --detach-sign -o "$tmp/exp.asc" testdata/SHA256SUMS
+stub_curl_tag v9.9.9 "$tmp/exp.asc"
+if MORTAR_UPDATE_FPR="$exp_fpr" MORTAR_UPDATE_KEYRING="$tmp/exp-keyring.asc" PATH="$bin:$PATH" scripts/update.sh >"$tmp/expkey.out" 2>"$tmp/expkey.err"; then
+  echo "update.sh accepted a SHA256SUMS signed by an expired key" >&2
+  exit 1
+fi
+grep -q 'SHA256SUMS not signed' "$tmp/expkey.err"
 stub_gpg
 
 stub_curl_tag '..'
