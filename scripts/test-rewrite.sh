@@ -551,6 +551,8 @@ EOF
 # The stub's latest Mortar is v0.3.5: pin the working copy to it so this case covers the other tools whatever release
 # is committed (the EXIT trap restores Formula/).
 sed -i 's|/download/v[^/]*/|/download/v0.3.5/|' Formula/mortar.rb
+# The committed formulas are newer than the stub's v1.2.3, which update.sh would refuse as a rollback.
+rm -rf Formula/rgit.rb Formula/gate.rb Formula/heft.rb Formula/engined.rb Formula/claude-format-hooks.rb bucket
 stub_multi_url create
 if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/create.out" 2>"$tmp/create.err"; then
   echo "update.sh failed to create formulas from matching releases" >&2
@@ -642,6 +644,21 @@ fi
 grep -q 'rgit v1.2.3' "$tmp/update.out"
 grep -q 'download/v1.2.3/rgit-v1.2.3-linux-amd64' Formula/rgit.rb
 grep -q 'download/v1.2.3/rgit-v1.2.3-linux-arm64' Formula/rgit.rb
+
+# A latest tag older than the pinned one (a re-marked old release) is a rollback: nothing moves backwards.
+sed -i 's/v1.2.3/v9.0.0/g' Formula/rgit.rb
+sed -i 's|/download/v[^/]*/|/download/v9.0.0/|' Formula/mortar.rb
+if ! PATH="$bin:$PATH" scripts/update.sh >"$tmp/rollback.out" 2>"$tmp/rollback.err"; then
+  echo "update.sh failed on a latest release older than the pinned one" >&2
+  cat "$tmp/rollback.err" >&2
+  exit 1
+fi
+grep -q 'rgit: latest v1.2.3 is older than pinned v9.0.0' "$tmp/rollback.err"
+grep -q 'mortar: latest v0.3.5 is older than pinned v9.0.0' "$tmp/rollback.err"
+grep -q 'download/v9.0.0/rgit-v9.0.0-linux-amd64' Formula/rgit.rb
+grep -q 'download/v9.0.0/mortar-linux-x86_64' Formula/mortar.rb
+sed -i 's/v9.0.0/v1.2.3/g' Formula/rgit.rb
+sed -i 's|/download/v[^/]*/|/download/v0.3.5/|' Formula/mortar.rb
 
 # A newer release without a valid signature is refused, fails the run and leaves the pinned manifest alone.
 sed -i 's/v1.2.3/v0.1.0/g' Formula/rgit.rb

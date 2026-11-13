@@ -38,6 +38,10 @@ curl_get() {
     return 1
   fi
 }
+# older A B: tag A sorts before tag B. releases/latest never names a prerelease, so sort -V order holds.
+older() {
+  [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
+}
 camel() {
   awk -F- '{for (i = 1; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2); print ""}' <<<"$1"
 }
@@ -176,6 +180,10 @@ update_mortar_from_url() {
   fi
   current=$(grep -m1 -o 'download/v[^/]*' "$F")
   [ "$current" != "download/$tag" ] || return 0
+  if older "$tag" "${current#download/}"; then
+    echo "update.sh: mortar: latest $tag is older than pinned ${current#download/}; kept" >&2
+    return 0
+  fi
   mortar_tmp=$tmp_root/mortar
   mkdir -p "$mortar_tmp"
   base="https://github.com/Rethunk-Tech/mortar/releases/download/$tag"
@@ -239,6 +247,10 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
   skip_formula=
   if [ -f "$formula" ]; then
     current=$(grep -m1 -o 'download/v[^/]*' "$formula" || true)
+    if [ -n "$current" ] && older "$tag" "${current#download/}"; then
+      echo "update.sh: $name: latest $tag is older than pinned ${current#download/}; kept" >&2
+      continue
+    fi
     if [ "$current" = "download/$tag" ]; then
       if [ -z "$windows_amd64" ] || { [ -f "bucket/${name}.json" ] && grep -Fq "\"version\": \"${tag#v}\"" "bucket/${name}.json"; }; then
         continue
