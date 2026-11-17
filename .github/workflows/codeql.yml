@@ -57,6 +57,7 @@ jobs:
     needs: [analyze]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     steps:
       - name: Fail if any check did not succeed
         run: |
