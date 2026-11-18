@@ -1,0 +1,3 @@
+[deviations]
+# Canon’s CodeQL artifact matrices Go (autobuild) plus Actions; this tap has Ruby formulas and GitHub Actions, not Go.
+"patterns-repo-settings-00001" = "CodeQL matrix is actions+ruby (build-mode none): this tap holds Homebrew formulas and workflows, not Go"
