@@ -19,6 +19,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Enable FUSE
         run: |
           sudo apt-get update
@@ -27,6 +29,8 @@ jobs:
       - name: Bump formulas and manifests to latest releases
         run: scripts/update.sh
       - name: Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           extra=
           [ -d bucket ] && extra=bucket
@@ -43,4 +47,4 @@ jobs:
           else
             git commit -m "packaging: latest releases"
           fi
-          git push
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push
