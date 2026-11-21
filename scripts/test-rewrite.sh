@@ -406,7 +406,7 @@ if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||tarball|x' | a
   echo "parse-tools.awk accepted install=tarball" >&2
   exit 1
 fi
-grep -q 'install must be bare or archive' "$tmp/inst.err"
+grep -q 'install must be bare, archive, or tree' "$tmp/inst.err"
 
 if echo 'x|Rethunk-Tech/x|sha256sums|a|b||https://example|MIT|d|||bare|' | awk -f scripts/parse-tools.awk >"$tmp/cmd.out" 2>"$tmp/cmd.err"; then
   echo "parse-tools.awk accepted an empty cmd" >&2
@@ -587,7 +587,9 @@ if grep -q 'depends_on "bun"' Formula/engined.rb; then
 fi
 grep -q 'depends_on :linux' Formula/engined.rb
 grep -q 'engined-linux-amd64.tar.gz' Formula/engined.rb
-grep -q 'bin.install "engined"' Formula/engined.rb
+grep -F -q 'libexec.install Dir["*"]' Formula/engined.rb
+grep -q 'bin.install_symlink libexec/"engined"' Formula/engined.rb
+grep -q 'agent claude: runs through bunx' Formula/engined.rb
 
 grep -q 'claude-format-hooks v1.2.3' "$tmp/create.out"
 grep -q 'class ClaudeFormatHooks ' Formula/claude-format-hooks.rb

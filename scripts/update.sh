@@ -52,7 +52,7 @@ hash() {
 write_formula() {
   local name=$1 repo=$2 tag=$3 x86_hash=$4 arm_hash=$5 x86_asset=$6 arm_asset=$7 homepage=$8 license=$9 desc=${10}
   local darwin_amd64=${11} darwin_arm64=${12} darwin_amd64_hash=${13} darwin_arm64_hash=${14} install=${15} cmd=${16}
-  local class platforms linux_dep bun_dep macos_block install_block
+  local class platforms linux_dep bun_dep macos_block install_block test_block
   class=$(camel "$name")
   if [ -n "$darwin_amd64" ]; then
     platforms="macOS and Linux x86_64 and aarch64"
@@ -79,7 +79,37 @@ EOF
     linux_dep=$'  depends_on :linux\n\n'
     macos_block=""
   fi
-  if [ "$install" = archive ]; then
+  test_block=$(
+    cat <<EOT
+  test do
+    assert_match version.to_s, shell_output("#{bin}/${cmd} --version")
+  end
+EOT
+  )
+  if [ "$install" = tree ]; then
+    # The release tarball holds the binary plus the files it finds beside itself, and the binary
+    # resolves its own real path, so the bin symlink reaches them in libexec. Reading a spec is the
+    # cheapest check that fails without that tree: --doctor exits 1 in the build sandbox (no docker
+    # or keyring) but reports each agent only after the spec loads.
+    bun_dep=""
+    install_block=$(
+      cat <<EOT
+  def install
+    libexec.install Dir["*"]
+    bin.install_symlink libexec/"${cmd}"
+  end
+EOT
+    )
+    test_block=$(
+      cat <<EOT
+  test do
+    assert_match version.to_s, shell_output("#{bin}/${cmd} --version")
+    ENV["XDG_CONFIG_HOME"] = testpath/"config"
+    assert_match "agent claude: runs through bunx", shell_output("#{bin}/${cmd} --doctor 2>&1", 1)
+  end
+EOT
+    )
+  elif [ "$install" = archive ]; then
     # The release tarball holds the self-contained binary at its root.
     bun_dep=""
     install_block=$(
@@ -124,9 +154,7 @@ ${linux_dep}${bun_dep}${macos_block}  on_linux do
 
 ${install_block}
 
-  test do
-    assert_match version.to_s, shell_output("#{bin}/${cmd} --version")
-  end
+${test_block}
 end
 EOF
 }
