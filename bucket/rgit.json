@@ -1,17 +1,17 @@
 {
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "Symbol-granular git staging and commits",
   "homepage": "https://github.com/Rethunk-Tech/rethunk-git-cli",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v3.0.2/rgit-v3.0.2-windows-amd64.exe",
-      "hash": "de580b37cbe3d43d71a5e4db3a1dbbd58015cbdd5d18f0820803ca5d9d9218a7"
+      "url": "https://github.com/Rethunk-Tech/rethunk-git-cli/releases/download/v3.0.3/rgit-v3.0.3-windows-amd64.exe",
+      "hash": "709e19023bb212cbfe1e1b826a645385742691eed7fa642d1a9aa280c48e731d"
     }
   },
   "bin": [
     [
-      "rgit-v3.0.2-windows-amd64.exe",
+      "rgit-v3.0.3-windows-amd64.exe",
       "rgit"
     ]
   ]
