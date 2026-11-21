@@ -12,11 +12,11 @@ class Heft < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/heft/releases/download/v0.12.6/heft-linux-arm64"
-      sha256 "9034c45659a1e7018036e1e210919fe6e2d3f1b474d9bef0f8dd93837409b7ef"
+      url "https://github.com/Rethunk-Tech/heft/releases/download/v0.13.0/heft-linux-arm64"
+      sha256 "39a28f87dbfbed01dbe2a5e97bae16e47f0073ad52793a8c1a3f9dc2048f823a"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/heft/releases/download/v0.12.6/heft-linux-amd64"
-      sha256 "1f0f5334c20545c0b4b54db209436c512fe1e0739614c1625eb5994e29e7f734"
+      url "https://github.com/Rethunk-Tech/heft/releases/download/v0.13.0/heft-linux-amd64"
+      sha256 "bac8e2331c2137917ba6a8e1f4fd87f120d86eba00a1c78ebfd47829df887a6d"
     else
       odie "heft is only packaged for Linux x86_64 and aarch64"
     end
