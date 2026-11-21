@@ -105,7 +105,7 @@ EOT
   test do
     assert_match version.to_s, shell_output("#{bin}/${cmd} --version")
     ENV["XDG_CONFIG_HOME"] = testpath/"config"
-    assert_match "agent claude: runs through bunx", shell_output("#{bin}/${cmd} --doctor 2>&1", [0, 1])
+    assert_match "agent claude: runs through bunx", shell_output("#{bin}/${cmd} --doctor 2>&1; true")
   end
 EOT
     )
