@@ -2,3 +2,10 @@
 # has no language toolchain to attach a test gate to.
 [gates.test]
 run = "scripts/test-rewrite.sh"
+
+# e2e: installs and tests the formula through real Homebrew (needs FUSE and the
+# tap checked out as rethunk-tech/tap); CI runs it only when Formula/** changes.
+[gates.brew-test]
+e2e = true
+timeout = "20m"
+run = "brew install --formula rethunk-tech/tap/mortar && brew test rethunk-tech/tap/mortar"
