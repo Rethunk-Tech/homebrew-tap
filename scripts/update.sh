@@ -89,8 +89,8 @@ EOT
   if [ "$install" = tree ]; then
     # The release tarball holds the binary plus the files it finds beside itself, and the binary
     # resolves its own real path, so the bin symlink reaches them in libexec. Reading a spec is the
-    # cheapest check that fails without that tree: --doctor exits 1 in the build sandbox (no docker
-    # or keyring) but reports each agent only after the spec loads.
+    # cheapest check that fails without that tree: --doctor exits 0 or 1 by what the host has (docker,
+    # keyring) but reports each agent only after the spec loads.
     bun_dep=""
     install_block=$(
       cat <<EOT
@@ -105,7 +105,7 @@ EOT
   test do
     assert_match version.to_s, shell_output("#{bin}/${cmd} --version")
     ENV["XDG_CONFIG_HOME"] = testpath/"config"
-    assert_match "agent claude: runs through bunx", shell_output("#{bin}/${cmd} --doctor 2>&1", 1)
+    assert_match "agent claude: runs through bunx", shell_output("#{bin}/${cmd} --doctor 2>&1", [0, 1])
   end
 EOT
     )
