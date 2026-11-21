@@ -10,6 +10,11 @@ class Heft < Formula
 
   depends_on :linux
 
+  resource "completions-man" do
+    url "https://github.com/Rethunk-Tech/heft/releases/download/v0.13.0/heft-completions-man.tar.gz"
+    sha256 "9fcb2652db431ecb2043ba90c886c20c2061d50200d799a0ad3b38fa281e254d"
+  end
+
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/Rethunk-Tech/heft/releases/download/v0.13.0/heft-linux-arm64"
@@ -24,6 +29,12 @@ class Heft < Formula
 
   def install
     bin.install File.basename(stable.url) => "heft"
+    resource("completions-man").stage do
+      bash_completion.install "heft.bash" => "heft"
+      zsh_completion.install "_heft"
+      fish_completion.install "heft.fish"
+      man1.install "heft.1"
+    end
   end
 
   test do

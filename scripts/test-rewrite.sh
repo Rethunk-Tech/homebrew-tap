@@ -439,11 +439,13 @@ heft_sums=$tmp/heft.SHA256SUMS
 cat >"$heft_sums" <<EOF
 $(h64 ac)  heft-linux-amd64
 $(h64 ad)  heft-linux-arm64
+$(h64 a7)  heft-completions-man.tar.gz
 EOF
 engined_sums=$tmp/engined.SHA256SUMS
 cat >"$engined_sums" <<EOF
 $(h64 ae)  engined-linux-amd64.tar.gz
 $(h64 af)  engined-linux-arm64.tar.gz
+$(h64 a8)  engined-completions-man.tar.gz
 EOF
 cfh_sums=$tmp/cfh.SHA256SUMS
 cat >"$cfh_sums" <<EOF
@@ -577,6 +579,15 @@ grep -q 'gate-windows-amd64.exe' bucket/gate.json
 grep -q 'heft v1.2.3' "$tmp/create.out"
 grep -q 'Apache-2.0' Formula/heft.rb
 grep -q 'depends_on :linux' Formula/heft.rb
+grep -q 'resource "completions-man" do' Formula/heft.rb
+grep -q 'download/v1.2.3/heft-completions-man.tar.gz' Formula/heft.rb
+grep -q "$(h64 a7)" Formula/heft.rb
+grep -q 'zsh_completion.install "_heft"' Formula/heft.rb
+grep -q 'man1.install "heft.1"' Formula/heft.rb
+if grep -q 'completions-man' Formula/rgit.rb; then
+  echo "rgit has no completions-man asset but its formula names one" >&2
+  exit 1
+fi
 grep -q 'download/v1.2.3/heft-linux-amd64' Formula/heft.rb
 [ ! -f bucket/heft.json ]
 
@@ -590,6 +601,9 @@ grep -q 'engined-linux-amd64.tar.gz' Formula/engined.rb
 grep -F -q 'libexec.install Dir["*"]' Formula/engined.rb
 grep -q 'bin.install_symlink libexec/"engined"' Formula/engined.rb
 grep -q 'agent claude: runs through bunx' Formula/engined.rb
+grep -q 'engined-completions-man.tar.gz' Formula/engined.rb
+grep -q "$(h64 a8)" Formula/engined.rb
+grep -q 'fish_completion.install "engined.fish"' Formula/engined.rb
 
 grep -q 'claude-format-hooks v1.2.3' "$tmp/create.out"
 grep -q 'class ClaudeFormatHooks ' Formula/claude-format-hooks.rb

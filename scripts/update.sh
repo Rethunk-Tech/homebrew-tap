@@ -52,7 +52,8 @@ hash() {
 write_formula() {
   local name=$1 repo=$2 tag=$3 x86_hash=$4 arm_hash=$5 x86_asset=$6 arm_asset=$7 homepage=$8 license=$9 desc=${10}
   local darwin_amd64=${11} darwin_arm64=${12} darwin_amd64_hash=${13} darwin_arm64_hash=${14} install=${15} cmd=${16}
-  local class platforms linux_dep bun_dep macos_block install_block test_block
+  local man_hash=${17:-}
+  local class platforms linux_dep bun_dep macos_block install_block test_block resource_block='' man_install=''
   class=$(camel "$name")
   if [ -n "$darwin_amd64" ]; then
     platforms="macOS and Linux x86_64 and aarch64"
@@ -129,6 +130,30 @@ EOF
 EOF
     )
   fi
+  if [ -n "$man_hash" ]; then
+    # Completions and the man page ship as their own release asset, flat, named by the command.
+    resource_block=$(
+      cat <<EOF
+  resource "completions-man" do
+    url "https://github.com/${repo}/releases/download/${tag}/${cmd}-completions-man.tar.gz"
+    sha256 "${man_hash}"
+  end
+EOF
+    )
+    resource_block+=$'\n\n'
+    man_install=$(
+      cat <<EOF
+
+    resource("completions-man").stage do
+      bash_completion.install "${cmd}.bash" => "${cmd}"
+      zsh_completion.install "_${cmd}"
+      fish_completion.install "${cmd}.fish"
+      man1.install "${cmd}.1"
+    end
+EOF
+    )
+    install_block=${install_block%$'\n'  end}${man_install}$'\n  end'
+  fi
   cat >"Formula/${name}.rb" <<EOF
 class ${class} < Formula
   desc "${desc}"
@@ -140,7 +165,7 @@ class ${class} < Formula
     strategy :github_latest
   end
 
-${linux_dep}${bun_dep}${macos_block}  on_linux do
+${linux_dep}${bun_dep}${resource_block}${macos_block}  on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/${repo}/releases/download/${tag}/${arm_asset}"
       sha256 "${arm_hash}"
@@ -238,6 +263,9 @@ tmp_root=$(mktemp -d)
 trap 'rm -rf "$tmp_root"' EXIT
 
 while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 homepage license desc darwin_amd64 darwin_arm64 install cmd; do
+  # install ends in +man when the release also ships <cmd>-completions-man.tar.gz.
+  man_asset=
+  case $install in *+man) man_asset=${cmd}-completions-man.tar.gz install=${install%+man} ;; esac
   latest=$(curl --retry 18 --retry-delay 10 --proto '=https' --connect-timeout 10 --max-time 60 -fsSI -o /dev/null -w '%{redirect_url}' "https://github.com/$repo/releases/latest" || true)
   tag=${latest##*/}
   if [ "$checksum" = gpg ]; then
@@ -256,7 +284,7 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
       echo "update.sh: $name: latest $tag is older than pinned ${current#download/}; kept" >&2
       continue
     fi
-    if [ "$current" = "download/$tag" ]; then
+    if [ "$current" = "download/$tag" ] && { [ -z "$man_asset" ] || grep -q 'resource "completions-man"' "$formula"; }; then
       if [ -z "$windows_amd64" ] || { [ -f "bucket/${name}.json" ] && grep -Fq "\"version\": \"${tag#v}\"" "bucket/${name}.json"; }; then
         continue
       fi
@@ -290,6 +318,14 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
     echo "update.sh: $name: skip: no matching release" >&2
     continue
   fi
+  man_hash=
+  if [ -n "$man_asset" ]; then
+    man_hash=$(hash "$man_asset" "$sums")
+    if [ -z "$man_hash" ]; then
+      echo "update.sh: $name: skip: no matching release" >&2
+      continue
+    fi
+  fi
   darwin_amd64_hash=""
   darwin_arm64_hash=""
   if [ -n "$darwin_amd64" ] || [ -n "$darwin_arm64" ]; then
@@ -301,7 +337,7 @@ while IFS='|' read -r name repo checksum linux_amd64 linux_arm64 windows_amd64 h
     fi
   fi
   if [ -z "$skip_formula" ]; then
-    write_formula "$name" "$repo" "$tag" "$x86" "$arm" "$linux_amd64" "$linux_arm64" "$homepage" "$license" "$desc" "$darwin_amd64" "$darwin_arm64" "$darwin_amd64_hash" "$darwin_arm64_hash" "$install" "$cmd"
+    write_formula "$name" "$repo" "$tag" "$x86" "$arm" "$linux_amd64" "$linux_arm64" "$homepage" "$license" "$desc" "$darwin_amd64" "$darwin_arm64" "$darwin_amd64_hash" "$darwin_arm64_hash" "$install" "$cmd" "$man_hash"
     echo "$name $tag"
   fi
   if [ -n "$windows_amd64" ]; then

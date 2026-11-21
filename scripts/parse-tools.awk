@@ -12,7 +12,7 @@ $3 != "gpg" && $3 != "sha256sums" && $3 != "gpgsums" {
   print "parse-tools.awk: checksum must be gpg, gpgsums, or sha256sums" > "/dev/stderr"
   exit 1
 }
-$3 != "gpg" && $12 != "bare" && $12 != "archive" && $12 != "tree" {
+$3 != "gpg" && $12 !~ /^(bare|archive|tree)(\+man)?$/ {
   print "parse-tools.awk: install must be bare, archive, or tree" > "/dev/stderr"
   exit 1
 }

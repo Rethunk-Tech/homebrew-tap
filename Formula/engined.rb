@@ -10,6 +10,11 @@ class Engined < Formula
 
   depends_on :linux
 
+  resource "completions-man" do
+    url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.1/engined-completions-man.tar.gz"
+    sha256 "dc366e148ff954ac4b06b8922f3e492f0b775a39a4b05f2a404c372252e58315"
+  end
+
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.1/engined-linux-arm64.tar.gz"
@@ -25,6 +30,12 @@ class Engined < Formula
   def install
     libexec.install Dir["*"]
     bin.install_symlink libexec/"engined"
+    resource("completions-man").stage do
+      bash_completion.install "engined.bash" => "engined"
+      zsh_completion.install "_engined"
+      fish_completion.install "engined.fish"
+      man1.install "engined.1"
+    end
   end
 
   test do
