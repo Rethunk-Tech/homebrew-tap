@@ -702,7 +702,7 @@ if grep -q 'go install' .github/workflows/ci.yml; then
   exit 1
 fi
 grep -q '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' .github/workflows/ci.yml
-grep -q '84011e4b8e9d181efba86ef616be07c8bf6a140b789ac204ef6bad11602f3f9d' .github/workflows/ci.yml
+grep -q '8c9b03c88f3de7dfe7742cb785facc9d9535dcf4dee319e648e15f477a745bfc' .github/workflows/ci.yml
 
 for f in .github/workflows/*.yml; do
   if ! awk '
