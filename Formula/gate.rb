@@ -10,11 +10,11 @@ class Gate < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.3/gate-darwin-arm64"
-      sha256 "e8d70e47d09cd5523954f6628bbf01026754605a2cd80d3da34ce9491cd89865"
+      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.5/gate-darwin-arm64"
+      sha256 "292fa749ee5da2c6f48cd58bcce0fcd5f10c66ecca19084352312ea6620bfce2"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.3/gate-darwin-amd64"
-      sha256 "6e2e9eb7f61829703329aab39d1e069fa7493836fa203404d8bc6a1823eaa0c3"
+      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.5/gate-darwin-amd64"
+      sha256 "82b80e467c7798ae49ac3761d94a3dd9b4e2433e48a0cbc7d6d8ea14e0598d5b"
     else
       odie "gate is only packaged for macOS and Linux x86_64 and aarch64"
     end
@@ -22,11 +22,11 @@ class Gate < Formula
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.3/gate-linux-arm64"
-      sha256 "89c46fcbc462918b35386a4a33cdc2f22dd2bf2440f3fd6738e73fa27c0e5a0b"
+      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.5/gate-linux-arm64"
+      sha256 "c66c7804e684859b66a99cfdd3ff013d5fdd2ae799b84760a44aec418f5558f7"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.3/gate-linux-amd64"
-      sha256 "38c14a3015e1bae8e6f7ec24a15d25792d067a32b4d6773a0a11d6d8701327cc"
+      url "https://github.com/Rethunk-Tech/rethunk-gate-cli/releases/download/v0.10.5/gate-linux-amd64"
+      sha256 "a10f4d6485a3eca467d9b4c6cdeb7894ec114ab0158b592a912db3e2462ab0c8"
     else
       odie "gate is only packaged for macOS and Linux x86_64 and aarch64"
     end
