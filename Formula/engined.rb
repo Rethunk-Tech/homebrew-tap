@@ -11,17 +11,17 @@ class Engined < Formula
   depends_on :linux
 
   resource "completions-man" do
-    url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.6/engined-completions-man.tar.gz"
-    sha256 "e3e5fa644261445b96accdb3f9312e4076624d4cda483c356687c729181aeab7"
+    url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.7/engined-completions-man.tar.gz"
+    sha256 "fcd41b1b1bbd62f858409248b60ee1f99c2d80ef53aa99704316370f49481d92"
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.6/engined-linux-arm64.tar.gz"
-      sha256 "dd70c5c1750d6c7c35cea9bf71c44dc619d35584567454b670940fa2e27ca64a"
+      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.7/engined-linux-arm64.tar.gz"
+      sha256 "b90ede54bcb48c8b0ec20b821fad59a404cf5d2930dc3f76ccfb41cd3a646be5"
     elsif Hardware::CPU.intel?
-      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.6/engined-linux-amd64.tar.gz"
-      sha256 "613c44a898e340abca79c6a95c9cb980602b52d7d2042d52c6004d887ba27900"
+      url "https://github.com/Rethunk-Tech/engined/releases/download/v0.3.7/engined-linux-amd64.tar.gz"
+      sha256 "907c7f0212944b4ecf602df65583d0fb6aa53f614cf708eda5fc954a7f831842"
     else
       odie "engined is only packaged for Linux x86_64 and aarch64"
     end
